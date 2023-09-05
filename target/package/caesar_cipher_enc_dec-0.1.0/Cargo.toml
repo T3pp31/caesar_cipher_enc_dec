@@ -13,5 +13,7 @@
 edition = "2021"
 name = "caesar_cipher_enc_dec"
 version = "0.1.0"
+description = "can easily use caesar cipher"
+license = "MIT"
 
 [dependencies]
