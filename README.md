@@ -22,7 +22,7 @@ fn main(){
  use crate::caesar_cipher_enc_dec::caesar_cipher::caesar_encrypt;
  let text = "L ORYH BRX.";
  for i in 0..26{
-    let mut result = caesar_encrypt(&text, i)}
+    let mut result = encrypt(&text, i)}
     println!("{}", result);
 ```
 
