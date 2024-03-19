@@ -9,8 +9,8 @@ set text and shift number
 use caesar_cipher_enc_dec::caesar_cipher::caesar_encrypt;
 fn main(){
     let text = "I LOVE YOU";
-    let enc_text = caesar_encrypt(&text, 3);
-    let dec_text = caesar_encrypt(&text, -3);
+    let enc_text = encrypt(&text, 3);
+    let dec_text = encrypt(&text, -3);
 }
  ```
 
