@@ -5,11 +5,12 @@
 ///
 /// # usage
 /// ```
-/// use caesar_cipher_enc_dec::caesar_cipher::encrypt;
+/// use caesar_cipher_enc_dec::caesar_cipher::{encrypt, decrypt};
 /// fn main(){
 /// let text = "I LOVE YOU";
 /// let enc_text = encrypt(&text, 3);
-/// let dec_text = encrypt(&text, -3);
+/// let dec_text = decrypt(&text, 3);
+/// let dec_text_2 = encrypt(&text, -3);
 /// }
 /// ```
 /// # Example
@@ -29,4 +30,7 @@ pub fn encrypt(text: &str, shift: i16) -> String {
     let conv = |c| (((c - a_code + shift + 26) % 26 + a_code) as u8) as char;
     let enc = |c| if is_az(c) { conv(c as i16) } else { c };
     return text.chars().map(|c| enc(c)).collect();
+}
+pub fn decrypt(text: &str, shift: i16) -> String {
+    return encrypt(text, -shift);
 }
