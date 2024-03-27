@@ -11,6 +11,7 @@ fn main(){
     let text = "I LOVE YOU";
     let enc_text = encrypt(&text, 3);
     let dec_text = encrypt(&text, -3);
+    let dec_text2 = decrypt(&text, 3);
 }
  ```
 
