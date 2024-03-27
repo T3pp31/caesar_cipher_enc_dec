@@ -9,8 +9,8 @@
 /// fn main(){
 /// let text = "I LOVE YOU";
 /// let enc_text = encrypt(&text, 3);
-/// let dec_text = decrypt(&text, 3);
-/// let dec_text_2 = encrypt(&text, -3);
+/// let dec_text = decrypt(&enc_text, 3);
+/// let dec_text_2 = encrypt(&enc_text, -3);
 /// }
 /// ```
 /// # Example

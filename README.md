@@ -10,8 +10,8 @@ use caesar_cipher_enc_dec::caesar_cipher::caesar_encrypt;
 fn main(){
     let text = "I LOVE YOU";
     let enc_text = encrypt(&text, 3);
-    let dec_text = encrypt(&text, -3);
-    let dec_text2 = decrypt(&text, 3);
+    let dec_text = encrypt(&enc_text, -3);
+    let dec_text2 = decrypt(&enc_text, 3);
 }
  ```
 
