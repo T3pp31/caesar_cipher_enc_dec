@@ -15,10 +15,10 @@
 /// # Example
 /// you can use this encrypt code for decrypt.
 ///  ```
-/// use crate::caesar_cipher_enc_dec::caesar_cipher::caesar_encrypt;
+/// use caesar_cipher_enc_dec::caesar_cipher::encrypt;
 /// let text = "I LOVE YOU";
 /// for i in 0..26{
-///     caesar_encrypt(&text, i);
+///     encrypt(&text, i);
 /// }
 /// ```
 
