@@ -30,3 +30,8 @@ fn main(){
 # link
 
 <https://crates.io/crates/caesar_cipher_enc_dec>
+
+# これからやること．
+
+エラーハンドリングをunwrapやexpectなどのpanicするメソッドからResultやOptionへ移行
+単体テスト，結合テストの作成
