@@ -4,6 +4,9 @@ version = "1.0.0"
 edition = "2021"
 description = "can easily use caesar cipher"
 license = "MIT"
+repository = "https://github.com/T3pp31/caesar_cipher_enc_dec"
+homepage = "https://github.com/T3pp31/caesar_cipher_enc_dec"
+documentation = "https://docs.rs/caesar_cipher_enc_dec"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
