@@ -1,6 +1,6 @@
 [package]
 name = "caesar_cipher_enc_dec"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "can easily use caesar cipher"
 license = "MIT"
