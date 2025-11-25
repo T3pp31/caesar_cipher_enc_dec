@@ -1,7 +1,14 @@
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
+
 use crate::caesar_cipher::{encrypt, decrypt, encrypt_safe, decrypt_safe};
+
+/// Maximum shift value for brute force decryption
+const MAX_BRUTE_FORCE_SHIFT: i16 = 25;
+
+/// Default shift value when user input is invalid
+const DEFAULT_SHIFT: i16 = 3;
 
 /// Main CLI structure for the Caesar cipher application
 ///
@@ -198,6 +205,43 @@ fn output_result(result: &str, output_file: Option<String>) -> Result<(), Box<dy
     Ok(())
 }
 
+/// Prompts the user for text input
+///
+/// # Arguments
+///
+/// * `prompt` - The prompt message to display
+///
+/// # Returns
+///
+/// The trimmed input string
+fn prompt_for_text(prompt: &str) -> io::Result<String> {
+    print!("{}", prompt);
+    io::stdout().flush()?;
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    Ok(input.trim().to_string())
+}
+
+/// Prompts the user for a shift value with validation
+///
+/// # Returns
+///
+/// A valid shift value, or the default if input is invalid
+fn prompt_for_shift() -> io::Result<i16> {
+    print!("Enter shift value (1-{}): ", MAX_BRUTE_FORCE_SHIFT);
+    io::stdout().flush()?;
+    let mut shift_str = String::new();
+    io::stdin().read_line(&mut shift_str)?;
+
+    match shift_str.trim().parse::<i16>() {
+        Ok(shift) => Ok(shift),
+        Err(_) => {
+            println!("Invalid shift value, using default ({})", DEFAULT_SHIFT);
+            Ok(DEFAULT_SHIFT)
+        }
+    }
+}
+
 /// Runs the interactive mode for the Caesar cipher
 ///
 /// This function provides an interactive command-line interface where users
@@ -214,71 +258,42 @@ fn output_result(result: &str, output_file: Option<String>) -> Result<(), Box<dy
 fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Caesar Cipher Interactive Mode ===");
     println!("Type 'quit' to exit");
-    
+
     loop {
-        print!("\nChoose operation (e)ncrypt, (d)ecrypt, (b)rute force, or (q)uit: ");
-        io::stdout().flush()?;
-        
-        let mut choice = String::new();
-        io::stdin().read_line(&mut choice)?;
-        let choice = choice.trim().to_lowercase();
-        
+        let choice = prompt_for_text("\nChoose operation (e)ncrypt, (d)ecrypt, (b)rute force, or (q)uit: ")?;
+        let choice = choice.to_lowercase();
+
         match choice.as_str() {
             "e" | "encrypt" => {
-                print!("Enter text to encrypt: ");
-                io::stdout().flush()?;
-                let mut text = String::new();
-                io::stdin().read_line(&mut text)?;
-                let text = text.trim();
-                
-                print!("Enter shift value (1-25): ");
-                io::stdout().flush()?;
-                let mut shift_str = String::new();
-                io::stdin().read_line(&mut shift_str)?;
-                let shift: i16 = shift_str.trim().parse().unwrap_or(3);
-                
-                let result = encrypt(text, shift);
+                let text = prompt_for_text("Enter text to encrypt: ")?;
+                let shift = prompt_for_shift()?;
+                let result = encrypt(&text, shift);
                 println!("Encrypted: {}", result);
             }
-            
+
             "d" | "decrypt" => {
-                print!("Enter text to decrypt: ");
-                io::stdout().flush()?;
-                let mut text = String::new();
-                io::stdin().read_line(&mut text)?;
-                let text = text.trim();
-                
-                print!("Enter shift value (1-25): ");
-                io::stdout().flush()?;
-                let mut shift_str = String::new();
-                io::stdin().read_line(&mut shift_str)?;
-                let shift: i16 = shift_str.trim().parse().unwrap_or(3);
-                
-                let result = decrypt(text, shift);
+                let text = prompt_for_text("Enter text to decrypt: ")?;
+                let shift = prompt_for_shift()?;
+                let result = decrypt(&text, shift);
                 println!("Decrypted: {}", result);
             }
-            
+
             "b" | "brute" | "bruteforce" => {
-                print!("Enter text to brute force decrypt: ");
-                io::stdout().flush()?;
-                let mut text = String::new();
-                io::stdin().read_line(&mut text)?;
-                let text = text.trim();
-                
-                run_brute_force(text);
+                let text = prompt_for_text("Enter text to brute force decrypt: ")?;
+                run_brute_force(&text);
             }
-            
+
             "q" | "quit" => {
                 println!("Goodbye!");
                 break;
             }
-            
+
             _ => {
                 println!("Invalid option. Please choose e, d, b, or q.");
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -295,8 +310,8 @@ fn run_brute_force(text: &str) {
     println!("\n=== Brute Force Decryption ===");
     println!("Original: {}", text);
     println!("Trying all possible shifts:");
-    
-    for shift in 1..=25 {
+
+    for shift in 1..=MAX_BRUTE_FORCE_SHIFT {
         let decrypted = decrypt(text, shift);
         println!("Shift {:2}: {}", shift, decrypted);
     }
