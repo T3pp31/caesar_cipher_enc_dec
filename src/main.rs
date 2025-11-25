@@ -39,47 +39,47 @@ fn run_demo() {
     println!("=== Caesar Cipher Demo ===");
     println!("Run with --help to see CLI options\n");
     
-    // 基本的な暗号化と復号化
-    let text: &str = "I Love You.";
-    let enc_text: String = encrypt(&text, 3);
-    let dec_text: String = encrypt(&enc_text, -3);
-    let dec_text2: String = decrypt(&enc_text, 3);
+    // Basic encryption and decryption
+    let text = "I Love You.";
+    let enc_text = encrypt(text, 3);
+    let dec_text = encrypt(&enc_text, -3);
+    let dec_text2 = decrypt(&enc_text, 3);
     
-    println!("=== 基本機能 ===");
-    println!("元の文字列: {}", text);
-    println!("暗号化: {}", enc_text);
-    println!("復号化(encrypt): {}", dec_text);
-    println!("復号化(decrypt): {}", dec_text2);
-    
-    // 小文字と大文字のテスト
+    println!("=== Basic Features ===");
+    println!("Original: {}", text);
+    println!("Encrypted: {}", enc_text);
+    println!("Decrypted (encrypt): {}", dec_text);
+    println!("Decrypted (decrypt): {}", dec_text2);
+
+    // Mixed case test
     let mixed_text = "Hello World! 123";
-    let encrypted_mixed = encrypt(&mixed_text, 5);
+    let encrypted_mixed = encrypt(mixed_text, 5);
     let decrypted_mixed = decrypt(&encrypted_mixed, 5);
-    
-    println!("\n=== 大文字小文字混在テスト ===");
-    println!("元の文字列: {}", mixed_text);
-    println!("暗号化: {}", encrypted_mixed);
-    println!("復号化: {}", decrypted_mixed);
-    
-    // エラーハンドリングのテスト
-    println!("\n=== エラーハンドリングテスト ===");
-    
+
+    println!("\n=== Mixed Case Test ===");
+    println!("Original: {}", mixed_text);
+    println!("Encrypted: {}", encrypted_mixed);
+    println!("Decrypted: {}", decrypted_mixed);
+
+    // Error handling test
+    println!("\n=== Error Handling Test ===");
+
     match encrypt_safe("Test Message", 3) {
-        Ok(result) => println!("正常な暗号化: {}", result),
-        Err(e) => println!("エラー: {}", e),
+        Ok(result) => println!("Valid encryption: {}", result),
+        Err(e) => println!("Error: {}", e),
     }
-    
+
     match encrypt_safe("", 3) {
-        Ok(result) => println!("空文字の暗号化: {}", result),
-        Err(e) => println!("エラー: {}", e),
+        Ok(result) => println!("Empty text encryption: {}", result),
+        Err(e) => println!("Error: {}", e),
     }
-    
+
     match encrypt_safe("Test", 30) {
-        Ok(result) => println!("無効なシフト値: {}", result),
-        Err(e) => println!("エラー: {}", e),
+        Ok(result) => println!("Invalid shift result: {}", result),
+        Err(e) => println!("Error: {}", e),
     }
-    
-    println!("\n=== CLI使用例 ===");
+
+    println!("\n=== CLI Usage Examples ===");
     println!("cargo run -- encrypt --text \"Hello World\" --shift 5");
     println!("cargo run -- decrypt --text \"Mjqqt Btwqi\" --shift 5");
     println!("cargo run -- interactive");
