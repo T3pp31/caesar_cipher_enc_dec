@@ -1,41 +1,57 @@
-/// # caesar_encrypt
-///
-/// can easily use caesar_encrypt and decrypt.
-/// set text and shift number
-///
-/// # usage
-/// ```
-/// use caesar_cipher_enc_dec::caesar_cipher::{encrypt, decrypt, encrypt_safe, decrypt_safe};
-/// fn main(){
-/// let text = "I Love You";
-/// let enc_text = encrypt(&text, 3);
-/// let dec_text = decrypt(&enc_text, 3);
-/// let dec_text_2 = encrypt(&enc_text, -3);
-/// 
-/// // Safe versions with error handling
-/// match encrypt_safe(&text, 3) {
-///     Ok(encrypted) => println!("Encrypted: {}", encrypted),
-///     Err(e) => println!("Error: {}", e),
-/// }
-/// }
-/// ```
-/// # Example
-/// you can use this encrypt code for decrypt.
-///  ```
-/// use caesar_cipher_enc_dec::caesar_cipher::encrypt;
-/// let text = "I Love You";
-/// for i in 0..26{
-///     encrypt(&text, i);
-/// }
-/// ```
+//! # Caesar Cipher Module
+//!
+//! Provides easy-to-use Caesar cipher encryption and decryption.
+//! Set text and shift number to encrypt or decrypt.
+//!
+//! # Usage
+//!
+//! ```
+//! use caesar_cipher_enc_dec::caesar_cipher::{encrypt, decrypt, encrypt_safe, decrypt_safe};
+//!
+//! let text = "I Love You";
+//! let enc_text = encrypt(&text, 3);
+//! let dec_text = decrypt(&enc_text, 3);
+//! let dec_text_2 = encrypt(&enc_text, -3);
+//!
+//! // Safe versions with error handling
+//! match encrypt_safe(&text, 3) {
+//!     Ok(encrypted) => println!("Encrypted: {}", encrypted),
+//!     Err(e) => println!("Error: {}", e),
+//! }
+//! ```
+//!
+//! # Brute Force Example
+//!
+//! You can use this encrypt code for brute force decryption:
+//!
+//! ```
+//! use caesar_cipher_enc_dec::caesar_cipher::encrypt;
+//!
+//! let text = "I Love You";
+//! for i in 0..26 {
+//!     encrypt(&text, i);
+//! }
+//! ```
+
+/// Size of the alphabet (A-Z)
+const ALPHABET_SIZE: i16 = 26;
+
+/// Maximum valid shift value for safe functions
+const MAX_SHIFT: i16 = 25;
+
+/// ASCII value of uppercase 'A'
+const UPPERCASE_BASE: i16 = 'A' as i16;
+
+/// ASCII value of lowercase 'a'
+const LOWERCASE_BASE: i16 = 'a' as i16;
 
 /// Error enum for Caesar cipher operations
 ///
 /// This error type represents possible errors that can occur during encryption/decryption operations.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CipherError {
     /// Error for invalid shift values
-    /// 
+    ///
     /// Occurs when the shift value is outside the range of -25 to 25.
     InvalidShift(String),
     /// Error for empty text input
@@ -140,13 +156,14 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
     if text.is_empty() {
         return Err(CipherError::EmptyText);
     }
-    
-    if shift.abs() > 25 {
+
+    if shift.abs() > MAX_SHIFT {
         return Err(CipherError::InvalidShift(format!(
-            "Shift value {} is out of range (-25 to 25)", shift
+            "Shift value {} is out of range (-{} to {})",
+            shift, MAX_SHIFT, MAX_SHIFT
         )));
     }
-    
+
     Ok(encrypt_char(text, shift))
 }
 
@@ -185,34 +202,33 @@ pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 ///
 /// This function handles the actual encryption processing.
 /// Only alphabetic characters (A-Z, a-z) are transformed, other characters remain unchanged.
-/// Shift values are automatically normalized to the 0-25 range.
+/// Shift values are automatically normalized to the 0-25 range using Euclidean modulo.
 ///
 /// # Arguments
 ///
 /// * `text` - Text to transform
-/// * `shift` - Shift value (automatically normalized)
+/// * `shift` - Shift value (automatically normalized via `rem_euclid`)
 ///
 /// # Returns
 ///
 /// Transformed text
 fn encrypt_char(text: &str, shift: i16) -> String {
-    let shift = ((shift % 26) + 26) % 26;
-    
-    text.chars().map(|c| {
-        match c {
+    // Use rem_euclid for proper handling of negative shifts
+    let normalized_shift = shift.rem_euclid(ALPHABET_SIZE);
+
+    text.chars()
+        .map(|c| match c {
             'A'..='Z' => {
-                let base = 'A' as i16;
-                let shifted = (c as i16 - base + shift) % 26;
-                ((shifted + base) as u8) as char
+                let shifted = (c as i16 - UPPERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
+                ((shifted + UPPERCASE_BASE) as u8) as char
             }
             'a'..='z' => {
-                let base = 'a' as i16;
-                let shifted = (c as i16 - base + shift) % 26;
-                ((shifted + base) as u8) as char
+                let shifted = (c as i16 - LOWERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
+                ((shifted + LOWERCASE_BASE) as u8) as char
             }
             _ => c,
-        }
-    }).collect()
+        })
+        .collect()
 }
 
 #[cfg(test)]
