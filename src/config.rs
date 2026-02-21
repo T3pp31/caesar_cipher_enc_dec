@@ -9,6 +9,9 @@ pub const ALPHABET_SIZE: i16 = 26;
 /// Maximum valid shift value for safe functions
 pub const MAX_SHIFT: i16 = 25;
 
+/// Minimum valid shift value for safe functions
+pub const MIN_SHIFT: i16 = -25;
+
 /// ASCII value of uppercase 'A'
 pub const UPPERCASE_BASE: i16 = 'A' as i16;
 
@@ -20,3 +23,6 @@ pub const MAX_BRUTE_FORCE_SHIFT: i16 = 25;
 
 /// Default shift value when user input is invalid
 pub const DEFAULT_SHIFT: i16 = 3;
+
+/// Maximum input size in bytes (10 MB)
+pub const MAX_INPUT_SIZE: usize = 10 * 1024 * 1024;

@@ -195,7 +195,10 @@ mod encrypt_safe_tests {
         // Then: Error message is correct
         assert!(result.is_err());
         let error = result.unwrap_err();
-        assert_eq!(error.to_string(), "Input text cannot be empty");
+        assert_eq!(
+            error.to_string(),
+            "Input text cannot be empty or whitespace-only"
+        );
     }
 }
 
@@ -286,5 +289,147 @@ mod decrypt_safe_tests {
         // Then: Returns Err(EmptyText)
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_decrypt_safe_whitespace_only_spaces() {
+        // Given: Whitespace-only text (spaces)
+        let text = "   ";
+        let shift = 3;
+
+        // When: Decrypting safely
+        let result = decrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_decrypt_safe_whitespace_only_tabs() {
+        // Given: Whitespace-only text (tabs)
+        let text = "\t\t";
+        let shift = 3;
+
+        // When: Decrypting safely
+        let result = decrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_decrypt_safe_whitespace_only_mixed() {
+        // Given: Whitespace-only text (mixed whitespace)
+        let text = " \t\n ";
+        let shift = 3;
+
+        // When: Decrypting safely
+        let result = decrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+}
+
+// =============================================================================
+// Whitespace validation tests (空白文字バリデーションテスト)
+// =============================================================================
+
+mod whitespace_validation_tests {
+    use super::*;
+
+    // -------------------------------------------------------------------------
+    // encrypt_safe whitespace tests (異常系)
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_encrypt_safe_whitespace_only_spaces() {
+        // Given: Text with only spaces
+        let text = "   ";
+        let shift = 3;
+
+        // When: Encrypting safely
+        let result = encrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_encrypt_safe_whitespace_only_tabs() {
+        // Given: Text with only tabs
+        let text = "\t\t";
+        let shift = 3;
+
+        // When: Encrypting safely
+        let result = encrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_encrypt_safe_whitespace_only_newlines() {
+        // Given: Text with only newlines
+        let text = "\n\n";
+        let shift = 3;
+
+        // When: Encrypting safely
+        let result = encrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    #[test]
+    fn test_encrypt_safe_whitespace_only_mixed() {
+        // Given: Text with mixed whitespace characters
+        let text = " \t\n ";
+        let shift = 3;
+
+        // When: Encrypting safely
+        let result = encrypt_safe(text, shift);
+
+        // Then: Returns Err(EmptyText)
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CipherError::EmptyText));
+    }
+
+    // -------------------------------------------------------------------------
+    // Leading/trailing whitespace with content (正常系)
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_encrypt_safe_text_with_leading_trailing_spaces() {
+        // Given: Text with leading and trailing spaces but valid content
+        let text = " Hello ";
+        let shift = 3;
+
+        // When: Encrypting safely
+        let result = encrypt_safe(text, shift);
+
+        // Then: Returns Ok with encrypted text (spaces preserved)
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), " Khoor ");
+    }
+
+    #[test]
+    fn test_decrypt_safe_text_with_leading_trailing_spaces() {
+        // Given: Encrypted text with leading and trailing spaces
+        let text = " Khoor ";
+        let shift = 3;
+
+        // When: Decrypting safely
+        let result = decrypt_safe(text, shift);
+
+        // Then: Returns Ok with decrypted text (spaces preserved)
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), " Hello ");
     }
 }

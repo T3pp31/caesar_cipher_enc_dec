@@ -13,7 +13,7 @@ fn test_cipher_error_display_empty_text() {
     let message = error.to_string();
 
     // Then: Correct message
-    assert_eq!(message, "Input text cannot be empty");
+    assert_eq!(message, "Input text cannot be empty or whitespace-only");
 }
 
 #[test]
