@@ -20,6 +20,19 @@
 - 必ずテストコードを作成してください．
 - Pythonを動かすときは、venvを使っていますので、どのvenvを使うかを聞いてください。
 
+## バージョン管理ルール
+- バージョンを上げる際は **必ず `cargo-release` を使ってください**。`Cargo.toml` を手動で書き換えてはいけません。
+- 未インストールの場合は先に `cargo install cargo-release` を実行してください。
+- バージョンアップのコマンド:
+  - パッチバージョン（バグ修正）: `cargo release patch`
+  - マイナーバージョン（機能追加）: `cargo release minor`
+  - メジャーバージョン（破壊的変更）: `cargo release major`
+- 上記コマンドが以下を自動で行います:
+  1. `Cargo.toml` のバージョン書き換え
+  2. `git commit`
+  3. `git tag vX.X.X`
+  4. `git push`
+
 ## MCP
 /o3 o3で検索を行う
 /serena serenaを使う
