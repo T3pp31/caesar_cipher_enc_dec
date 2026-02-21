@@ -33,17 +33,7 @@
 //! }
 //! ```
 
-/// Size of the alphabet (A-Z)
-const ALPHABET_SIZE: i16 = 26;
-
-/// Maximum valid shift value for safe functions
-const MAX_SHIFT: i16 = 25;
-
-/// ASCII value of uppercase 'A'
-const UPPERCASE_BASE: i16 = 'A' as i16;
-
-/// ASCII value of lowercase 'a'
-const LOWERCASE_BASE: i16 = 'a' as i16;
+use crate::config::{ALPHABET_SIZE, LOWERCASE_BASE, MAX_SHIFT, UPPERCASE_BASE};
 
 /// Error enum for Caesar cipher operations
 ///
@@ -92,13 +82,13 @@ impl std::error::Error for CipherError {}
 /// assert_eq!(result, "Khoor");
 /// ```
 pub fn encrypt(text: &str, shift: i16) -> String {
-    encrypt_char(text, shift)
+    shift_text(text, shift)
 }
 
 /// Decrypts text using Caesar cipher
 ///
 /// This function decrypts the specified text with the given shift value.
-/// Internally calls encrypt_char with a negative shift value.
+/// Internally uses shift_text with a negative shift value.
 ///
 /// # Arguments
 ///
@@ -118,7 +108,7 @@ pub fn encrypt(text: &str, shift: i16) -> String {
 /// assert_eq!(result, "Hello");
 /// ```
 pub fn decrypt(text: &str, shift: i16) -> String {
-    encrypt_char(text, -shift)
+    shift_text(text, -shift)
 }
 
 /// Encrypts text using Caesar cipher with error handling
@@ -157,20 +147,20 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
         return Err(CipherError::EmptyText);
     }
 
-    if shift.abs() > MAX_SHIFT {
+    if shift < -MAX_SHIFT || shift > MAX_SHIFT {
         return Err(CipherError::InvalidShift(format!(
             "Shift value {} is out of range (-{} to {})",
             shift, MAX_SHIFT, MAX_SHIFT
         )));
     }
 
-    Ok(encrypt_char(text, shift))
+    Ok(shift_text(text, shift))
 }
 
 /// Decrypts text using Caesar cipher with error handling
 ///
 /// This function validates input values and returns an error for invalid inputs.
-/// Internally calls encrypt_safe with a negative shift value.
+/// Validates shift range before negation to prevent integer overflow.
 ///
 /// # Arguments
 ///
@@ -195,10 +185,21 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// assert_eq!(result, "Hello");
 /// ```
 pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
-    encrypt_safe(text, -shift)
+    if text.is_empty() {
+        return Err(CipherError::EmptyText);
+    }
+
+    if shift < -MAX_SHIFT || shift > MAX_SHIFT {
+        return Err(CipherError::InvalidShift(format!(
+            "Shift value {} is out of range (-{} to {})",
+            shift, MAX_SHIFT, MAX_SHIFT
+        )));
+    }
+
+    Ok(shift_text(text, -shift))
 }
 
-/// Internal implementation: Performs character-level Caesar cipher transformation
+/// Internal implementation: Performs text-level Caesar cipher transformation
 ///
 /// This function handles the actual encryption processing.
 /// Only alphabetic characters (A-Z, a-z) are transformed, other characters remain unchanged.
@@ -212,7 +213,7 @@ pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// # Returns
 ///
 /// Transformed text
-fn encrypt_char(text: &str, shift: i16) -> String {
+fn shift_text(text: &str, shift: i16) -> String {
     // Use rem_euclid for proper handling of negative shifts
     let normalized_shift = shift.rem_euclid(ALPHABET_SIZE);
 

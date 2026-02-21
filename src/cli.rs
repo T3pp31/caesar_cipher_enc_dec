@@ -3,12 +3,7 @@ use std::fs;
 use std::io::{self, Write};
 
 use crate::caesar_cipher::{encrypt, decrypt, encrypt_safe, decrypt_safe};
-
-/// Maximum shift value for brute force decryption
-const MAX_BRUTE_FORCE_SHIFT: i16 = 25;
-
-/// Default shift value when user input is invalid
-const DEFAULT_SHIFT: i16 = 3;
+use crate::config::{MAX_BRUTE_FORCE_SHIFT, DEFAULT_SHIFT};
 
 /// Main CLI structure for the Caesar cipher application
 ///
@@ -17,7 +12,7 @@ const DEFAULT_SHIFT: i16 = 3;
 #[derive(Parser)]
 #[command(name = "caesar_cipher")]
 #[command(about = "A Caesar cipher encryption/decryption tool")]
-#[command(version = "0.6.2")]
+#[command(version)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -163,7 +158,8 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
 fn get_input_text(text: Option<String>, file: Option<String>) -> Result<String, Box<dyn std::error::Error>> {
     match (text, file) {
         (Some(t), None) => Ok(t),
-        (None, Some(f)) => Ok(fs::read_to_string(f)?),
+        (None, Some(f)) => fs::read_to_string(&f)
+            .map_err(|e| format!("Failed to read file '{}': {}", f, e).into()),
         (Some(_), Some(_)) => Err("Cannot specify both text and file".into()),
         (None, None) => {
             print!("Enter text: ");
@@ -195,8 +191,8 @@ fn get_input_text(text: Option<String>, file: Option<String>) -> Result<String, 
 fn output_result(result: &str, output_file: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     match output_file {
         Some(file) => {
-            fs::write(file, result)?;
-            println!("Result written to file");
+            fs::write(&file, result)?;
+            println!("Result written to file: {}", file);
         }
         None => {
             println!("{}", result);
