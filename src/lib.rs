@@ -26,8 +26,12 @@
 //!
 //! ## Modules
 //!
+//! - [`config`] - Centralized constants and configuration
 //! - [`caesar_cipher`] - Core encryption/decryption functionality
 //! - [`cli`] - Command-line interface implementation
+
+/// Centralized configuration and constants
+pub mod config;
 
 /// Core Caesar cipher encryption and decryption functionality
 pub mod caesar_cipher;
