@@ -13,7 +13,7 @@ use std::env;
 /// or the demonstration mode (when no arguments are provided).
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
+
     if args.len() > 1 {
         if let Err(e) = cli::run_cli() {
             eprintln!("Error: {}", e);
@@ -38,13 +38,13 @@ fn main() {
 fn run_demo() {
     println!("=== Caesar Cipher Demo ===");
     println!("Run with --help to see CLI options\n");
-    
+
     // Basic encryption and decryption
     let text = "I Love You.";
     let enc_text = encrypt(text, 3);
     let dec_text = encrypt(&enc_text, -3);
     let dec_text2 = decrypt(&enc_text, 3);
-    
+
     println!("=== Basic Features ===");
     println!("Original: {}", text);
     println!("Encrypted: {}", enc_text);

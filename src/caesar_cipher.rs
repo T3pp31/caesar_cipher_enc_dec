@@ -77,7 +77,7 @@ impl std::error::Error for CipherError {}
 ///
 /// ```
 /// use caesar_cipher_enc_dec::caesar_cipher::encrypt;
-/// 
+///
 /// let result = encrypt("Hello", 3);
 /// assert_eq!(result, "Khoor");
 /// ```
@@ -103,7 +103,7 @@ pub fn encrypt(text: &str, shift: i16) -> String {
 ///
 /// ```
 /// use caesar_cipher_enc_dec::caesar_cipher::decrypt;
-/// 
+///
 /// let result = decrypt("Khoor", 3);
 /// assert_eq!(result, "Hello");
 /// ```
@@ -134,10 +134,10 @@ pub fn decrypt(text: &str, shift: i16) -> String {
 ///
 /// ```
 /// use caesar_cipher_enc_dec::caesar_cipher::encrypt_safe;
-/// 
+///
 /// let result = encrypt_safe("Hello", 3).unwrap();
 /// assert_eq!(result, "Khoor");
-/// 
+///
 /// // Error cases
 /// assert!(encrypt_safe("", 3).is_err());
 /// assert!(encrypt_safe("Hello", 26).is_err());
@@ -147,7 +147,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
         return Err(CipherError::EmptyText);
     }
 
-    if shift < -MAX_SHIFT || shift > MAX_SHIFT {
+    if !(-MAX_SHIFT..=MAX_SHIFT).contains(&shift) {
         return Err(CipherError::InvalidShift(format!(
             "Shift value {} is out of range (-{} to {})",
             shift, MAX_SHIFT, MAX_SHIFT
@@ -180,7 +180,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 ///
 /// ```
 /// use caesar_cipher_enc_dec::caesar_cipher::decrypt_safe;
-/// 
+///
 /// let result = decrypt_safe("Khoor", 3).unwrap();
 /// assert_eq!(result, "Hello");
 /// ```
@@ -189,7 +189,7 @@ pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
         return Err(CipherError::EmptyText);
     }
 
-    if shift < -MAX_SHIFT || shift > MAX_SHIFT {
+    if !(-MAX_SHIFT..=MAX_SHIFT).contains(&shift) {
         return Err(CipherError::InvalidShift(format!(
             "Shift value {} is out of range (-{} to {})",
             shift, MAX_SHIFT, MAX_SHIFT
@@ -220,11 +220,13 @@ fn shift_text(text: &str, shift: i16) -> String {
     text.chars()
         .map(|c| match c {
             'A'..='Z' => {
-                let shifted = (c as i16 - UPPERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
+                let shifted =
+                    (c as i16 - UPPERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
                 ((shifted + UPPERCASE_BASE) as u8) as char
             }
             'a'..='z' => {
-                let shifted = (c as i16 - LOWERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
+                let shifted =
+                    (c as i16 - LOWERCASE_BASE + normalized_shift).rem_euclid(ALPHABET_SIZE);
                 ((shifted + LOWERCASE_BASE) as u8) as char
             }
             _ => c,
@@ -305,16 +307,28 @@ mod tests {
 
     #[test]
     fn test_encrypt_safe_invalid_shift() {
-        assert!(matches!(encrypt_safe("Test", 26), Err(CipherError::InvalidShift(_))));
-        assert!(matches!(encrypt_safe("Test", -26), Err(CipherError::InvalidShift(_))));
-        assert!(matches!(encrypt_safe("Test", 100), Err(CipherError::InvalidShift(_))));
+        assert!(matches!(
+            encrypt_safe("Test", 26),
+            Err(CipherError::InvalidShift(_))
+        ));
+        assert!(matches!(
+            encrypt_safe("Test", -26),
+            Err(CipherError::InvalidShift(_))
+        ));
+        assert!(matches!(
+            encrypt_safe("Test", 100),
+            Err(CipherError::InvalidShift(_))
+        ));
     }
 
     #[test]
     fn test_decrypt_safe() {
         assert_eq!(decrypt_safe("Khoor", 3).unwrap(), "Hello");
         assert!(matches!(decrypt_safe("", 3), Err(CipherError::EmptyText)));
-        assert!(matches!(decrypt_safe("Test", 26), Err(CipherError::InvalidShift(_))));
+        assert!(matches!(
+            decrypt_safe("Test", 26),
+            Err(CipherError::InvalidShift(_))
+        ));
     }
 
     #[test]

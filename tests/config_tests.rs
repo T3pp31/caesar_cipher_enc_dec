@@ -20,8 +20,7 @@
 //! | 各定数が正の値           | 異常系防止 | 全定数 > 0                     |
 
 use caesar_cipher_enc_dec::config::{
-    ALPHABET_SIZE, DEFAULT_SHIFT, LOWERCASE_BASE, MAX_BRUTE_FORCE_SHIFT, MAX_SHIFT,
-    UPPERCASE_BASE,
+    ALPHABET_SIZE, DEFAULT_SHIFT, LOWERCASE_BASE, MAX_BRUTE_FORCE_SHIFT, MAX_SHIFT, UPPERCASE_BASE,
 };
 
 // =============================================================================
@@ -136,7 +135,10 @@ fn test_all_constants_are_positive() {
     assert!(MAX_SHIFT > 0, "MAX_SHIFT must be positive");
     assert!(UPPERCASE_BASE > 0, "UPPERCASE_BASE must be positive");
     assert!(LOWERCASE_BASE > 0, "LOWERCASE_BASE must be positive");
-    assert!(MAX_BRUTE_FORCE_SHIFT > 0, "MAX_BRUTE_FORCE_SHIFT must be positive");
+    assert!(
+        MAX_BRUTE_FORCE_SHIFT > 0,
+        "MAX_BRUTE_FORCE_SHIFT must be positive"
+    );
     assert!(DEFAULT_SHIFT > 0, "DEFAULT_SHIFT must be positive");
 }
 
@@ -145,8 +147,14 @@ fn test_base_values_are_valid_ascii() {
     // Given: UPPERCASE_BASE and LOWERCASE_BASE
     // When: Checking if they are valid ASCII letter ranges
     // Then: They should be within valid u8 range and represent letters
-    assert!(UPPERCASE_BASE >= 0 && UPPERCASE_BASE <= 127, "UPPERCASE_BASE must be valid ASCII");
-    assert!(LOWERCASE_BASE >= 0 && LOWERCASE_BASE <= 127, "LOWERCASE_BASE must be valid ASCII");
+    assert!(
+        UPPERCASE_BASE >= 0 && UPPERCASE_BASE <= 127,
+        "UPPERCASE_BASE must be valid ASCII"
+    );
+    assert!(
+        LOWERCASE_BASE >= 0 && LOWERCASE_BASE <= 127,
+        "LOWERCASE_BASE must be valid ASCII"
+    );
     assert_eq!((UPPERCASE_BASE as u8) as char, 'A');
     assert_eq!((LOWERCASE_BASE as u8) as char, 'a');
 }
