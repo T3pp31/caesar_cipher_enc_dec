@@ -2,9 +2,7 @@
 //!
 //! Tests for `encrypt_safe` and `decrypt_safe` functions with error handling.
 
-use caesar_cipher_enc_dec::caesar_cipher::{
-    decrypt_safe, encrypt_safe, CipherError,
-};
+use caesar_cipher_enc_dec::caesar_cipher::{decrypt_safe, encrypt_safe, CipherError};
 
 // =============================================================================
 // encrypt_safe function tests

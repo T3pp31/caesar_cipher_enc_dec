@@ -103,7 +103,15 @@ fn test_cli_encrypt_output_to_file() {
     // When: CLI writes to file
     let result = std::process::Command::new("cargo")
         .args([
-            "run", "--", "encrypt", "--text", "Hello", "--shift", "3", "--output", &output_path_str,
+            "run",
+            "--",
+            "encrypt",
+            "--text",
+            "Hello",
+            "--shift",
+            "3",
+            "--output",
+            &output_path_str,
         ])
         .output()
         .expect("Failed to execute CLI");
@@ -133,7 +141,13 @@ fn test_cli_nonexistent_file_error_contains_path() {
     // When: CLI tries to read from nonexistent file
     let output = std::process::Command::new("cargo")
         .args([
-            "run", "--", "encrypt", "--file", nonexistent_path, "--shift", "3",
+            "run",
+            "--",
+            "encrypt",
+            "--file",
+            nonexistent_path,
+            "--shift",
+            "3",
         ])
         .output()
         .expect("Failed to execute CLI");
@@ -233,10 +247,12 @@ fn test_cli_version_matches_cargo_toml() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    // Then: Version should match Cargo.toml (1.0.1)
+    // Then: Version should match Cargo.toml (dynamically read at compile time)
+    let expected_version = env!("CARGO_PKG_VERSION");
     assert!(
-        stdout.contains("1.0.1"),
-        "CLI version should be 1.0.1 from Cargo.toml, got: {}",
+        stdout.contains(expected_version),
+        "CLI version should be {} from Cargo.toml, got: {}",
+        expected_version,
         stdout
     );
 }
@@ -245,7 +261,15 @@ fn test_cli_version_matches_cargo_toml() {
 fn test_cli_encrypt_unicode_text() {
     // Given: Unicode text (Japanese + English mix)
     let output = std::process::Command::new("cargo")
-        .args(["run", "--", "encrypt", "--text", "Hello世界", "--shift", "3"])
+        .args([
+            "run",
+            "--",
+            "encrypt",
+            "--text",
+            "Hello世界",
+            "--shift",
+            "3",
+        ])
         .output()
         .expect("Failed to execute CLI");
 

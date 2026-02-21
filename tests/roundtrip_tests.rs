@@ -2,9 +2,7 @@
 //!
 //! Tests that verify encryption followed by decryption returns the original text.
 
-use caesar_cipher_enc_dec::caesar_cipher::{
-    decrypt, decrypt_safe, encrypt, encrypt_safe,
-};
+use caesar_cipher_enc_dec::caesar_cipher::{decrypt, decrypt_safe, encrypt, encrypt_safe};
 
 // =============================================================================
 // Basic roundtrip tests

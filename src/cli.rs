@@ -2,8 +2,8 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
 
-use crate::caesar_cipher::{encrypt, decrypt, encrypt_safe, decrypt_safe};
-use crate::config::{MAX_BRUTE_FORCE_SHIFT, DEFAULT_SHIFT};
+use crate::caesar_cipher::{decrypt, decrypt_safe, encrypt, encrypt_safe};
+use crate::config::{DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT};
 
 /// Main CLI structure for the Caesar cipher application
 ///
@@ -29,19 +29,19 @@ pub enum Commands {
         /// Text to encrypt
         #[arg(short, long)]
         text: Option<String>,
-        
+
         /// Input file path
         #[arg(short = 'f', long)]
         file: Option<String>,
-        
+
         /// Shift value (1-25)
         #[arg(short, long, default_value = "3")]
         shift: i16,
-        
+
         /// Output file path
         #[arg(short, long)]
         output: Option<String>,
-        
+
         /// Use safe mode with error checking
         #[arg(long)]
         safe: bool,
@@ -51,19 +51,19 @@ pub enum Commands {
         /// Text to decrypt
         #[arg(short, long)]
         text: Option<String>,
-        
+
         /// Input file path
         #[arg(short = 'f', long)]
         file: Option<String>,
-        
+
         /// Shift value (1-25)
         #[arg(short, long, default_value = "3")]
         shift: i16,
-        
+
         /// Output file path
         #[arg(short, long)]
         output: Option<String>,
-        
+
         /// Use safe mode with error checking
         #[arg(long)]
         safe: bool,
@@ -75,7 +75,7 @@ pub enum Commands {
         /// Text to decrypt
         #[arg(short, long)]
         text: Option<String>,
-        
+
         /// Input file path
         #[arg(short = 'f', long)]
         file: Option<String>,
@@ -100,9 +100,15 @@ pub enum Commands {
 /// - Input/output operations fail
 pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    
+
     match cli.command {
-        Commands::Encrypt { text, file, shift, output, safe } => {
+        Commands::Encrypt {
+            text,
+            file,
+            shift,
+            output,
+            safe,
+        } => {
             let input_text = get_input_text(text, file)?;
             let result = if safe {
                 encrypt_safe(&input_text, shift)?
@@ -111,8 +117,14 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
             };
             output_result(&result, output)?;
         }
-        
-        Commands::Decrypt { text, file, shift, output, safe } => {
+
+        Commands::Decrypt {
+            text,
+            file,
+            shift,
+            output,
+            safe,
+        } => {
             let input_text = get_input_text(text, file)?;
             let result = if safe {
                 decrypt_safe(&input_text, shift)?
@@ -121,17 +133,17 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
             };
             output_result(&result, output)?;
         }
-        
+
         Commands::Interactive => {
             run_interactive_mode()?;
         }
-        
+
         Commands::BruteForce { text, file } => {
             let input_text = get_input_text(text, file)?;
             run_brute_force(&input_text);
         }
     }
-    
+
     Ok(())
 }
 
@@ -155,11 +167,15 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
 /// - Both text and file are provided simultaneously
 /// - File reading fails
 /// - Stdin reading fails
-fn get_input_text(text: Option<String>, file: Option<String>) -> Result<String, Box<dyn std::error::Error>> {
+fn get_input_text(
+    text: Option<String>,
+    file: Option<String>,
+) -> Result<String, Box<dyn std::error::Error>> {
     match (text, file) {
         (Some(t), None) => Ok(t),
-        (None, Some(f)) => fs::read_to_string(&f)
-            .map_err(|e| format!("Failed to read file '{}': {}", f, e).into()),
+        (None, Some(f)) => {
+            fs::read_to_string(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e).into())
+        }
         (Some(_), Some(_)) => Err("Cannot specify both text and file".into()),
         (None, None) => {
             print!("Enter text: ");
@@ -188,7 +204,10 @@ fn get_input_text(text: Option<String>, file: Option<String>) -> Result<String, 
 /// # Errors
 ///
 /// Returns an error if file writing fails
-fn output_result(result: &str, output_file: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+fn output_result(
+    result: &str,
+    output_file: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     match output_file {
         Some(file) => {
             fs::write(&file, result)?;
@@ -256,7 +275,8 @@ fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
     println!("Type 'quit' to exit");
 
     loop {
-        let choice = prompt_for_text("\nChoose operation (e)ncrypt, (d)ecrypt, (b)rute force, or (q)uit: ")?;
+        let choice =
+            prompt_for_text("\nChoose operation (e)ncrypt, (d)ecrypt, (b)rute force, or (q)uit: ")?;
         let choice = choice.to_lowercase();
 
         match choice.as_str() {
@@ -330,8 +350,9 @@ mod tests {
     fn test_get_input_text_from_file() {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "Test content").unwrap();
-        
-        let result = get_input_text(None, Some(temp_file.path().to_string_lossy().to_string())).unwrap();
+
+        let result =
+            get_input_text(None, Some(temp_file.path().to_string_lossy().to_string())).unwrap();
         assert_eq!(result.trim(), "Test content");
     }
 
@@ -339,16 +360,19 @@ mod tests {
     fn test_get_input_text_both_provided() {
         let result = get_input_text(Some("Hello".to_string()), Some("file.txt".to_string()));
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Cannot specify both text and file"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Cannot specify both text and file"));
     }
 
     #[test]
     fn test_output_result_to_file() {
         let temp_file = NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         output_result("Test output", Some(file_path.clone())).unwrap();
-        
+
         let content = fs::read_to_string(file_path).unwrap();
         assert_eq!(content, "Test output");
     }

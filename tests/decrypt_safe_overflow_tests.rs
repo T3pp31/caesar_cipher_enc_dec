@@ -20,9 +20,7 @@
 //! | shift=i16::MIN エラーメッセージ | 異常系  | エラーにシフト値が含まれる            |
 //! | 正常値での往復検証             | 正常系   | encrypt_safe→decrypt_safeで復元       |
 
-use caesar_cipher_enc_dec::caesar_cipher::{
-    decrypt_safe, encrypt_safe, CipherError,
-};
+use caesar_cipher_enc_dec::caesar_cipher::{decrypt_safe, encrypt_safe, CipherError};
 
 // =============================================================================
 // Boundary values (境界値)
