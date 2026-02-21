@@ -12,9 +12,7 @@ use std::env;
 /// This function determines whether to run the CLI interface (when arguments are provided)
 /// or the demonstration mode (when no arguments are provided).
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() > 1 {
+    if env::args().count() > 1 {
         if let Err(e) = cli::run_cli() {
             eprintln!("Error: {}", e);
             std::process::exit(1);

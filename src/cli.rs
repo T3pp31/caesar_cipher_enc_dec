@@ -1,9 +1,9 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
 
 use crate::caesar_cipher::{decrypt, decrypt_safe, encrypt, encrypt_safe};
-use crate::config::{DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT};
+use crate::config::{DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT, MAX_INPUT_SIZE, MAX_SHIFT, MIN_SHIFT};
 
 /// Main CLI structure for the Caesar cipher application
 ///
@@ -18,6 +18,30 @@ pub struct Cli {
     pub command: Commands,
 }
 
+/// Common arguments shared between encrypt and decrypt commands
+#[derive(Args)]
+pub struct CipherArgs {
+    /// Text to process
+    #[arg(short, long)]
+    pub text: Option<String>,
+
+    /// Input file path
+    #[arg(short = 'f', long)]
+    pub file: Option<String>,
+
+    /// Shift value (any integer; safe mode: -25 to 25, default: 3)
+    #[arg(short, long, default_value = "3")]
+    pub shift: i16,
+
+    /// Output file path
+    #[arg(short, long)]
+    pub output: Option<String>,
+
+    /// Use safe mode with error checking
+    #[arg(long)]
+    pub safe: bool,
+}
+
 /// Available commands for the Caesar cipher CLI
 ///
 /// Each variant represents a different operation that can be performed
@@ -25,49 +49,9 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Encrypt text using Caesar cipher
-    Encrypt {
-        /// Text to encrypt
-        #[arg(short, long)]
-        text: Option<String>,
-
-        /// Input file path
-        #[arg(short = 'f', long)]
-        file: Option<String>,
-
-        /// Shift value (1-25)
-        #[arg(short, long, default_value = "3")]
-        shift: i16,
-
-        /// Output file path
-        #[arg(short, long)]
-        output: Option<String>,
-
-        /// Use safe mode with error checking
-        #[arg(long)]
-        safe: bool,
-    },
+    Encrypt(CipherArgs),
     /// Decrypt text using Caesar cipher
-    Decrypt {
-        /// Text to decrypt
-        #[arg(short, long)]
-        text: Option<String>,
-
-        /// Input file path
-        #[arg(short = 'f', long)]
-        file: Option<String>,
-
-        /// Shift value (1-25)
-        #[arg(short, long, default_value = "3")]
-        shift: i16,
-
-        /// Output file path
-        #[arg(short, long)]
-        output: Option<String>,
-
-        /// Use safe mode with error checking
-        #[arg(long)]
-        safe: bool,
-    },
+    Decrypt(CipherArgs),
     /// Interactive mode
     Interactive,
     /// Show all possible decryptions (brute force)
@@ -102,36 +86,24 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Encrypt {
-            text,
-            file,
-            shift,
-            output,
-            safe,
-        } => {
-            let input_text = get_input_text(text, file)?;
-            let result = if safe {
-                encrypt_safe(&input_text, shift)?
+        Commands::Encrypt(args) => {
+            let input_text = get_input_text(args.text, args.file)?;
+            let result = if args.safe {
+                encrypt_safe(&input_text, args.shift)?
             } else {
-                encrypt(&input_text, shift)
+                encrypt(&input_text, args.shift)
             };
-            output_result(&result, output)?;
+            output_result(&result, args.output)?;
         }
 
-        Commands::Decrypt {
-            text,
-            file,
-            shift,
-            output,
-            safe,
-        } => {
-            let input_text = get_input_text(text, file)?;
-            let result = if safe {
-                decrypt_safe(&input_text, shift)?
+        Commands::Decrypt(args) => {
+            let input_text = get_input_text(args.text, args.file)?;
+            let result = if args.safe {
+                decrypt_safe(&input_text, args.shift)?
             } else {
-                decrypt(&input_text, shift)
+                decrypt(&input_text, args.shift)
             };
-            output_result(&result, output)?;
+            output_result(&result, args.output)?;
         }
 
         Commands::Interactive => {
@@ -172,8 +144,26 @@ fn get_input_text(
     file: Option<String>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     match (text, file) {
-        (Some(t), None) => Ok(t),
+        (Some(t), None) => {
+            if t.len() > MAX_INPUT_SIZE {
+                return Err(format!(
+                    "Input text exceeds maximum size of {} bytes",
+                    MAX_INPUT_SIZE
+                )
+                .into());
+            }
+            Ok(t)
+        }
         (None, Some(f)) => {
+            let metadata =
+                fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
+            if metadata.len() > MAX_INPUT_SIZE as u64 {
+                return Err(format!(
+                    "Input file '{}' exceeds maximum size of {} bytes",
+                    f, MAX_INPUT_SIZE
+                )
+                .into());
+            }
             fs::read_to_string(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e).into())
         }
         (Some(_), Some(_)) => Err("Cannot specify both text and file".into()),
@@ -182,6 +172,13 @@ fn get_input_text(
             io::stdout().flush()?;
             let mut input = String::new();
             io::stdin().read_line(&mut input)?;
+            if input.len() > MAX_INPUT_SIZE {
+                return Err(format!(
+                    "Input text exceeds maximum size of {} bytes",
+                    MAX_INPUT_SIZE
+                )
+                .into());
+            }
             Ok(input.trim().to_string())
         }
     }
@@ -237,24 +234,57 @@ fn prompt_for_text(prompt: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
+/// Validates shift input string and returns parsed value with optional warning
+///
+/// # Arguments
+///
+/// * `input` - Raw input string from user
+///
+/// # Returns
+///
+/// A tuple of (shift value, optional warning message).
+/// Returns default shift with warning if input is invalid.
+pub(crate) fn validate_shift_input(input: &str) -> (i16, Option<String>) {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return (DEFAULT_SHIFT, None);
+    }
+
+    match trimmed.parse::<i16>() {
+        Ok(shift) => {
+            if !(MIN_SHIFT..=MAX_SHIFT).contains(&shift) {
+                let warning = format!(
+                    "Warning: shift {} is outside the typical range ({} to {}). Value will be normalized.",
+                    shift, MIN_SHIFT, MAX_SHIFT
+                );
+                (shift, Some(warning))
+            } else {
+                (shift, None)
+            }
+        }
+        Err(_) => {
+            let warning = format!("Invalid shift value, using default ({})", DEFAULT_SHIFT);
+            (DEFAULT_SHIFT, Some(warning))
+        }
+    }
+}
+
 /// Prompts the user for a shift value with validation
 ///
 /// # Returns
 ///
 /// A valid shift value, or the default if input is invalid
 fn prompt_for_shift() -> io::Result<i16> {
-    print!("Enter shift value (1-{}): ", MAX_BRUTE_FORCE_SHIFT);
+    print!("Enter shift value (default: {}): ", DEFAULT_SHIFT);
     io::stdout().flush()?;
     let mut shift_str = String::new();
     io::stdin().read_line(&mut shift_str)?;
 
-    match shift_str.trim().parse::<i16>() {
-        Ok(shift) => Ok(shift),
-        Err(_) => {
-            println!("Invalid shift value, using default ({})", DEFAULT_SHIFT);
-            Ok(DEFAULT_SHIFT)
-        }
+    let (shift, warning) = validate_shift_input(&shift_str);
+    if let Some(msg) = warning {
+        println!("{}", msg);
     }
+    Ok(shift)
 }
 
 /// Runs the interactive mode for the Caesar cipher
@@ -316,8 +346,8 @@ fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
 /// Performs brute force decryption on the given text
 ///
 /// This function attempts to decrypt the input text using all possible
-/// shift values (1-25) and displays the results. This is useful when
-/// the shift value is unknown.
+/// shift values (0-25) and displays the results. This is useful when
+/// the shift value is unknown. Shift 0 shows the original text for reference.
 ///
 /// # Arguments
 ///
@@ -327,7 +357,7 @@ fn run_brute_force(text: &str) {
     println!("Original: {}", text);
     println!("Trying all possible shifts:");
 
-    for shift in 1..=MAX_BRUTE_FORCE_SHIFT {
+    for shift in 0..=MAX_BRUTE_FORCE_SHIFT {
         let decrypted = decrypt(text, shift);
         println!("Shift {:2}: {}", shift, decrypted);
     }
@@ -375,5 +405,165 @@ mod tests {
 
         let content = fs::read_to_string(file_path).unwrap();
         assert_eq!(content, "Test output");
+    }
+
+    // -------------------------------------------------------------------------
+    // Input size limit tests
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_get_input_text_oversized_file_error() {
+        // Given: A file that exceeds MAX_INPUT_SIZE
+        use std::io::Write as _;
+        let mut temp_file = NamedTempFile::new().unwrap();
+        // Write MAX_INPUT_SIZE + 1 bytes to exceed the limit
+        let oversized_data = vec![b'A'; MAX_INPUT_SIZE + 1];
+        temp_file.write_all(&oversized_data).unwrap();
+        temp_file.flush().unwrap();
+
+        // When: Reading from oversized file
+        let result = get_input_text(None, Some(temp_file.path().to_string_lossy().to_string()));
+
+        // Then: Returns error about exceeding maximum size
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("exceeds maximum size"));
+    }
+
+    #[test]
+    fn test_get_input_text_file_at_max_size_succeeds() {
+        // Given: A file exactly at MAX_INPUT_SIZE (should succeed)
+        use std::io::Write as _;
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![b'A'; MAX_INPUT_SIZE];
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // When: Reading from file at the limit
+        let result = get_input_text(None, Some(temp_file.path().to_string_lossy().to_string()));
+
+        // Then: Returns Ok
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), MAX_INPUT_SIZE);
+    }
+
+    // -------------------------------------------------------------------------
+    // validate_shift_input tests
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_validate_shift_input_valid_value() {
+        // Given: A valid shift value within range
+        // When: Validating input "3"
+        let (shift, warning) = validate_shift_input("3");
+        // Then: Returns 3 with no warning
+        assert_eq!(shift, 3);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_zero() {
+        // Given: Shift value of 0 (boundary)
+        // When: Validating input "0"
+        let (shift, warning) = validate_shift_input("0");
+        // Then: Returns 0 with no warning
+        assert_eq!(shift, 0);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_max_boundary() {
+        // Given: Maximum valid shift value (25)
+        // When: Validating input "25"
+        let (shift, warning) = validate_shift_input("25");
+        // Then: Returns 25 with no warning
+        assert_eq!(shift, 25);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_min_boundary() {
+        // Given: Minimum valid shift value (-25)
+        // When: Validating input "-25"
+        let (shift, warning) = validate_shift_input("-25");
+        // Then: Returns -25 with no warning
+        assert_eq!(shift, -25);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_out_of_range_positive() {
+        // Given: Shift value above range (26)
+        // When: Validating input "26"
+        let (shift, warning) = validate_shift_input("26");
+        // Then: Returns 26 with a warning
+        assert_eq!(shift, 26);
+        assert!(warning.is_some());
+        assert!(warning.unwrap().contains("Warning"));
+    }
+
+    #[test]
+    fn test_validate_shift_input_out_of_range_negative() {
+        // Given: Shift value below range (-26)
+        // When: Validating input "-26"
+        let (shift, warning) = validate_shift_input("-26");
+        // Then: Returns -26 with a warning
+        assert_eq!(shift, -26);
+        assert!(warning.is_some());
+        assert!(warning.unwrap().contains("Warning"));
+    }
+
+    #[test]
+    fn test_validate_shift_input_far_out_of_range() {
+        // Given: Shift value far out of range (9999)
+        // When: Validating input "9999"
+        let (shift, warning) = validate_shift_input("9999");
+        // Then: Returns 9999 with a warning containing the value
+        assert_eq!(shift, 9999);
+        assert!(warning.is_some());
+        assert!(warning.unwrap().contains("9999"));
+    }
+
+    #[test]
+    fn test_validate_shift_input_invalid_string() {
+        // Given: Non-numeric input
+        // When: Validating input "abc"
+        let (shift, warning) = validate_shift_input("abc");
+        // Then: Returns default shift with a warning
+        assert_eq!(shift, DEFAULT_SHIFT);
+        assert!(warning.is_some());
+        assert!(warning.unwrap().contains("Invalid"));
+    }
+
+    #[test]
+    fn test_validate_shift_input_empty_string() {
+        // Given: Empty input
+        // When: Validating input ""
+        let (shift, warning) = validate_shift_input("");
+        // Then: Returns default shift with no warning
+        assert_eq!(shift, DEFAULT_SHIFT);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_whitespace_only() {
+        // Given: Whitespace-only input
+        // When: Validating input "  "
+        let (shift, warning) = validate_shift_input("  ");
+        // Then: Returns default shift with no warning (treated as empty)
+        assert_eq!(shift, DEFAULT_SHIFT);
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_shift_input_with_surrounding_whitespace() {
+        // Given: Valid value with surrounding whitespace
+        // When: Validating input " 5 "
+        let (shift, warning) = validate_shift_input(" 5 ");
+        // Then: Returns 5 with no warning
+        assert_eq!(shift, 5);
+        assert!(warning.is_none());
     }
 }

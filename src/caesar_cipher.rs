@@ -52,7 +52,7 @@ impl std::fmt::Display for CipherError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             CipherError::InvalidShift(msg) => write!(f, "Invalid shift value: {}", msg),
-            CipherError::EmptyText => write!(f, "Input text cannot be empty"),
+            CipherError::EmptyText => write!(f, "Input text cannot be empty or whitespace-only"),
         }
     }
 }
@@ -143,7 +143,7 @@ pub fn decrypt(text: &str, shift: i16) -> String {
 /// assert!(encrypt_safe("Hello", 26).is_err());
 /// ```
 pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
-    if text.is_empty() {
+    if text.trim().is_empty() {
         return Err(CipherError::EmptyText);
     }
 
@@ -185,7 +185,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// assert_eq!(result, "Hello");
 /// ```
 pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
-    if text.is_empty() {
+    if text.trim().is_empty() {
         return Err(CipherError::EmptyText);
     }
 

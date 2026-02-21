@@ -326,3 +326,70 @@ fn test_cli_safe_mode_empty_text_from_file() {
         stderr
     );
 }
+
+// =============================================================================
+// Brute force shift=0 tests
+// =============================================================================
+
+#[test]
+fn test_cli_brute_force_includes_shift_zero() {
+    // Given: An encrypted text
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "brute-force", "--text", "Khoor"])
+        .output()
+        .expect("Failed to execute CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Then: Output contains shift 0
+    assert!(
+        stdout.contains("Shift  0:"),
+        "Brute force output should include shift 0, got: {}",
+        stdout
+    );
+}
+
+#[test]
+fn test_cli_brute_force_shift_zero_is_original() {
+    // Given: A known encrypted text "Khoor"
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "brute-force", "--text", "Khoor"])
+        .output()
+        .expect("Failed to execute CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Then: Shift 0 shows the original text unchanged
+    assert!(
+        stdout.contains("Shift  0: Khoor"),
+        "Shift 0 should show original text 'Khoor', got: {}",
+        stdout
+    );
+}
+
+// =============================================================================
+// Help text tests
+// =============================================================================
+
+#[test]
+fn test_cli_encrypt_help_shows_correct_shift_description() {
+    // Given: CLI with encrypt --help
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "encrypt", "--help"])
+        .output()
+        .expect("Failed to execute CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Then: Help text should describe shift range accurately
+    assert!(
+        stdout.contains("safe mode: -25 to 25"),
+        "Help text should mention safe mode range, got: {}",
+        stdout
+    );
+    assert!(
+        !stdout.contains("Shift value (1-25)"),
+        "Help text should NOT contain outdated '1-25' range, got: {}",
+        stdout
+    );
+}
