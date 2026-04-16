@@ -90,6 +90,10 @@ pub fn encrypt(text: &str, shift: i16) -> String {
 /// This function decrypts the specified text with the given shift value.
 /// Internally uses shift_text with a negative shift value.
 ///
+/// The shift is widened to `i32` before negation to avoid integer overflow
+/// when `shift == i16::MIN`; the normalized value passed to `shift_text` is
+/// always within `0..ALPHABET_SIZE` so no precision is lost.
+///
 /// # Arguments
 ///
 /// * `text` - Text to decrypt
@@ -108,17 +112,20 @@ pub fn encrypt(text: &str, shift: i16) -> String {
 /// assert_eq!(result, "Hello");
 /// ```
 pub fn decrypt(text: &str, shift: i16) -> String {
-    shift_text(text, -shift)
+    let negated = -(shift as i32);
+    let normalized = negated.rem_euclid(ALPHABET_SIZE as i32) as i16;
+    shift_text(text, normalized)
 }
 
 /// Encrypts text using Caesar cipher with error handling
 ///
 /// This function validates input values and returns an error for invalid inputs.
-/// Returns errors for empty text or out-of-range shift values (outside -25 to 25).
+/// Returns errors for empty/whitespace-only text or out-of-range shift values
+/// (outside -25 to 25).
 ///
 /// # Arguments
 ///
-/// * `text` - Text to encrypt (must not be empty)
+/// * `text` - Text to encrypt (must not be empty or whitespace-only)
 /// * `shift` - Shift value (must be in range -25 to 25)
 ///
 /// # Returns
@@ -127,7 +134,7 @@ pub fn decrypt(text: &str, shift: i16) -> String {
 ///
 /// # Errors
 ///
-/// * `CipherError::EmptyText` - When text is empty
+/// * `CipherError::EmptyText` - When text is empty or whitespace-only
 /// * `CipherError::InvalidShift` - When shift value is out of range
 ///
 /// # Examples
@@ -164,7 +171,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 ///
 /// # Arguments
 ///
-/// * `text` - Text to decrypt (must not be empty)
+/// * `text` - Text to decrypt (must not be empty or whitespace-only)
 /// * `shift` - Shift value to use for decryption (must be in range -25 to 25)
 ///
 /// # Returns
@@ -173,7 +180,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 ///
 /// # Errors
 ///
-/// * `CipherError::EmptyText` - When text is empty
+/// * `CipherError::EmptyText` - When text is empty or whitespace-only
 /// * `CipherError::InvalidShift` - When shift value is out of range
 ///
 /// # Examples

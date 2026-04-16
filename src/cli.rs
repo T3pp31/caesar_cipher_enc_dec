@@ -30,7 +30,7 @@ pub struct CipherArgs {
     pub file: Option<String>,
 
     /// Shift value (any integer; safe mode: -25 to 25, default: 3)
-    #[arg(short, long, default_value = "3")]
+    #[arg(short, long, default_value_t = DEFAULT_SHIFT)]
     pub shift: i16,
 
     /// Output file path
