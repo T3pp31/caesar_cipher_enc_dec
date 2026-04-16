@@ -110,8 +110,8 @@ fn test_decrypt_preserves_encrypt_roundtrip_with_extreme_shift() {
 #[test]
 fn test_cli_default_shift_matches_constant() {
     // Given: clap is configured with `default_value_t = DEFAULT_SHIFT`
-    use clap::Parser;
     use caesar_cipher_enc_dec::cli::{Cli, Commands};
+    use clap::Parser;
 
     // When: Parsing a command that does not specify --shift
     let cli = Cli::try_parse_from(["caesar_cipher", "encrypt", "--text", "Hello"])
@@ -127,8 +127,8 @@ fn test_cli_default_shift_matches_constant() {
 #[test]
 fn test_cli_default_shift_applies_to_decrypt() {
     // Given: decrypt subcommand without explicit shift
-    use clap::Parser;
     use caesar_cipher_enc_dec::cli::{Cli, Commands};
+    use clap::Parser;
 
     // When: Parsing
     let cli = Cli::try_parse_from(["caesar_cipher", "decrypt", "--text", "Khoor"])
@@ -144,13 +144,12 @@ fn test_cli_default_shift_applies_to_decrypt() {
 #[test]
 fn test_cli_explicit_shift_overrides_default() {
     // Given: explicit --shift on the command line
-    use clap::Parser;
     use caesar_cipher_enc_dec::cli::{Cli, Commands};
+    use clap::Parser;
 
     // When: Parsing
-    let cli =
-        Cli::try_parse_from(["caesar_cipher", "encrypt", "--text", "Hi", "--shift", "7"])
-            .expect("parse should succeed");
+    let cli = Cli::try_parse_from(["caesar_cipher", "encrypt", "--text", "Hi", "--shift", "7"])
+        .expect("parse should succeed");
 
     // Then: Explicit value is used, not the default
     match cli.command {
