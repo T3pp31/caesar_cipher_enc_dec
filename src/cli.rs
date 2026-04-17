@@ -179,6 +179,10 @@ fn get_input_text(
     Ok(input.trim().to_string())
 }
 
+fn trim_trailing_newline(input: &str) -> &str {
+    input.trim_end_matches(['\n', '\r'])
+}
+
 /// Outputs the result to either a file or stdout
 ///
 /// This function handles outputting the cipher result to the specified destination.
@@ -386,6 +390,13 @@ mod tests {
         let result = get_input_text(Some("Hello".to_string()), Some("file.txt".to_string()));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Hello");
+    }
+
+    #[test]
+    fn test_trim_trailing_newline_preserves_leading_and_trailing_spaces() {
+        let input = "  keep spaces  \n";
+        let result = trim_trailing_newline(input);
+        assert_eq!(result, "  keep spaces  ");
     }
 
     #[test]
