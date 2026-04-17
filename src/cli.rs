@@ -179,9 +179,13 @@ fn get_input_text(
                 )
                 .into());
             }
-            Ok(input.trim().to_string())
+            Ok(trim_trailing_newline(&input).to_string())
         }
     }
+}
+
+fn trim_trailing_newline(input: &str) -> &str {
+    input.trim_end_matches(['\n', '\r'])
 }
 
 /// Outputs the result to either a file or stdout
@@ -394,6 +398,13 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("Cannot specify both text and file"));
+    }
+
+    #[test]
+    fn test_trim_trailing_newline_preserves_leading_and_trailing_spaces() {
+        let input = "  keep spaces  \n";
+        let result = trim_trailing_newline(input);
+        assert_eq!(result, "  keep spaces  ");
     }
 
     #[test]
