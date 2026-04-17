@@ -7,7 +7,7 @@
 //! | テスト観点                       | 分類     | 期待値                                |
 //! |----------------------------------|----------|---------------------------------------|
 //! | 存在しないファイル読込           | 異常系   | エラーメッセージにファイルパス含む    |
-//! | text+file同時指定                | 異常系   | "Cannot specify both" エラー          |
+//! | text+file同時指定                | 異常系   | clap が即エラーを返す                 |
 //! | テキスト引数のみ指定             | 正常系   | テキストがそのまま返る                |
 //! | ファイルから正常読込             | 正常系   | ファイル内容が返る                    |
 //! | 空ファイル読込                   | 境界値   | 空文字列返却                          |
@@ -180,10 +180,43 @@ fn test_cli_both_text_and_file_error() {
 
     let stderr = String::from_utf8_lossy(&output.stderr);
 
-    // Then: Error message mentions the conflict
+    // Then: clap validates conflict before application logic
+    assert!(!output.status.success(), "Command should fail on clap validation");
     assert!(
-        stderr.contains("Cannot specify both"),
-        "Error should mention 'Cannot specify both', got: {}",
+        stderr.contains("cannot be used with") || stderr.contains("conflicts with"),
+        "Error should mention clap conflict, got: {}",
+        stderr
+    );
+}
+
+#[test]
+fn test_cli_brute_force_both_text_and_file_error() {
+    // Given: Both text and file arguments provided for brute-force
+    let mut temp_file = NamedTempFile::new().unwrap();
+    write!(temp_file, "content").unwrap();
+    let file_path = temp_file.path().to_string_lossy().to_string();
+
+    // When: CLI receives both arguments
+    let output = std::process::Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "brute-force",
+            "--text",
+            "Khoor",
+            "--file",
+            &file_path,
+        ])
+        .output()
+        .expect("Failed to execute CLI");
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Then: clap validates conflict before application logic
+    assert!(!output.status.success(), "Command should fail on clap validation");
+    assert!(
+        stderr.contains("cannot be used with") || stderr.contains("conflicts with"),
+        "Error should mention clap conflict, got: {}",
         stderr
     );
 }

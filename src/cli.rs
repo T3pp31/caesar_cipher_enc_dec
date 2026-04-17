@@ -22,11 +22,11 @@ pub struct Cli {
 #[derive(Args)]
 pub struct CipherArgs {
     /// Text to process
-    #[arg(short, long)]
+    #[arg(short, long, conflicts_with = "file")]
     pub text: Option<String>,
 
     /// Input file path
-    #[arg(short = 'f', long)]
+    #[arg(short = 'f', long, conflicts_with = "text")]
     pub file: Option<String>,
 
     /// Shift value (any integer; safe mode: -25 to 25, default: 3)
@@ -57,11 +57,11 @@ pub enum Commands {
     /// Show all possible decryptions (brute force)
     BruteForce {
         /// Text to decrypt
-        #[arg(short, long)]
+        #[arg(short, long, conflicts_with = "file")]
         text: Option<String>,
 
         /// Input file path
-        #[arg(short = 'f', long)]
+        #[arg(short = 'f', long, conflicts_with = "text")]
         file: Option<String>,
     },
 }
@@ -136,52 +136,47 @@ pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
 /// # Errors
 ///
 /// Returns an error if:
-/// - Both text and file are provided simultaneously
 /// - File reading fails
 /// - Stdin reading fails
 fn get_input_text(
     text: Option<String>,
     file: Option<String>,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    match (text, file) {
-        (Some(t), None) => {
-            if t.len() > MAX_INPUT_SIZE {
-                return Err(format!(
-                    "Input text exceeds maximum size of {} bytes",
-                    MAX_INPUT_SIZE
-                )
-                .into());
-            }
-            Ok(t)
+    if let Some(t) = text {
+        if t.len() > MAX_INPUT_SIZE {
+            return Err(format!(
+                "Input text exceeds maximum size of {} bytes",
+                MAX_INPUT_SIZE
+            )
+            .into());
         }
-        (None, Some(f)) => {
-            let metadata =
-                fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
-            if metadata.len() > MAX_INPUT_SIZE as u64 {
-                return Err(format!(
-                    "Input file '{}' exceeds maximum size of {} bytes",
-                    f, MAX_INPUT_SIZE
-                )
-                .into());
-            }
-            fs::read_to_string(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e).into())
-        }
-        (Some(_), Some(_)) => Err("Cannot specify both text and file".into()),
-        (None, None) => {
-            print!("Enter text: ");
-            io::stdout().flush()?;
-            let mut input = String::new();
-            io::stdin().read_line(&mut input)?;
-            if input.len() > MAX_INPUT_SIZE {
-                return Err(format!(
-                    "Input text exceeds maximum size of {} bytes",
-                    MAX_INPUT_SIZE
-                )
-                .into());
-            }
-            Ok(trim_trailing_newline(&input).to_string())
-        }
+        return Ok(t);
     }
+
+    if let Some(f) = file {
+        let metadata = fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
+        if metadata.len() > MAX_INPUT_SIZE as u64 {
+            return Err(format!(
+                "Input file '{}' exceeds maximum size of {} bytes",
+                f, MAX_INPUT_SIZE
+            )
+            .into());
+        }
+        return fs::read_to_string(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e).into());
+    }
+
+    print!("Enter text: ");
+    io::stdout().flush()?;
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    if input.len() > MAX_INPUT_SIZE {
+        return Err(format!(
+            "Input text exceeds maximum size of {} bytes",
+            MAX_INPUT_SIZE
+        )
+        .into());
+    }
+    Ok(input.trim().to_string())
 }
 
 fn trim_trailing_newline(input: &str) -> &str {
@@ -391,13 +386,10 @@ mod tests {
     }
 
     #[test]
-    fn test_get_input_text_both_provided() {
+    fn test_get_input_text_prefers_text_when_both_provided() {
         let result = get_input_text(Some("Hello".to_string()), Some("file.txt".to_string()));
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Cannot specify both text and file"));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "Hello");
     }
 
     #[test]
