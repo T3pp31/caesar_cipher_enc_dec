@@ -150,16 +150,7 @@ pub fn decrypt(text: &str, shift: i16) -> String {
 /// assert!(encrypt_safe("Hello", 26).is_err());
 /// ```
 pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
-    if text.trim().is_empty() {
-        return Err(CipherError::EmptyText);
-    }
-
-    if !(-MAX_SHIFT..=MAX_SHIFT).contains(&shift) {
-        return Err(CipherError::InvalidShift(format!(
-            "Shift value {} is out of range (-{} to {})",
-            shift, MAX_SHIFT, MAX_SHIFT
-        )));
-    }
+    validate_safe_inputs(text, shift)?;
 
     Ok(shift_text(text, shift))
 }
@@ -193,18 +184,35 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// assert_eq!(result, "Hello");
 /// ```
 pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
+    validate_safe_inputs(text, shift)?;
+
+    let negated = -(shift as i32);
+    let normalized = negated.rem_euclid(ALPHABET_SIZE as i32) as i16;
+    Ok(shift_text(text, normalized))
+}
+
+/// Validates shared inputs for safe Caesar cipher APIs.
+///
+/// This private function centralizes validation and error message generation
+/// used by `encrypt_safe` and `decrypt_safe`.
+fn validate_safe_inputs(text: &str, shift: i16) -> Result<(), CipherError> {
     if text.trim().is_empty() {
         return Err(CipherError::EmptyText);
     }
 
     if !(-MAX_SHIFT..=MAX_SHIFT).contains(&shift) {
-        return Err(CipherError::InvalidShift(format!(
-            "Shift value {} is out of range (-{} to {})",
-            shift, MAX_SHIFT, MAX_SHIFT
-        )));
+        return Err(invalid_shift_error(shift));
     }
 
-    Ok(decrypt(text, shift))
+    Ok(())
+}
+
+/// Creates a standardized invalid shift error message.
+fn invalid_shift_error(shift: i16) -> CipherError {
+    CipherError::InvalidShift(format!(
+        "Shift value {} is out of range (-{} to {})",
+        shift, MAX_SHIFT, MAX_SHIFT
+    ))
 }
 
 /// Internal implementation: Performs text-level Caesar cipher transformation
