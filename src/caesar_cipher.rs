@@ -158,7 +158,8 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// Decrypts text using Caesar cipher with error handling
 ///
 /// This function validates input values and returns an error for invalid inputs.
-/// Validates shift range before negation to prevent integer overflow.
+/// Internally uses `decrypt` after validation, so fixes in `decrypt`
+/// are automatically reflected in this safe API.
 ///
 /// # Arguments
 ///
