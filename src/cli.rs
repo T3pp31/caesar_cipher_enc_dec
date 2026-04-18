@@ -154,7 +154,8 @@ fn get_input_text(
     }
 
     if let Some(f) = file {
-        let metadata = fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
+        let metadata =
+            fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
         if metadata.len() > MAX_INPUT_SIZE as u64 {
             return Err(format!(
                 "Input file '{}' exceeds maximum size of {} bytes",
@@ -162,7 +163,8 @@ fn get_input_text(
             )
             .into());
         }
-        return fs::read_to_string(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e).into());
+        return fs::read_to_string(&f)
+            .map_err(|e| format!("Failed to read file '{}': {}", f, e).into());
     }
 
     print!("Enter text: ");
@@ -179,6 +181,7 @@ fn get_input_text(
     Ok(input.trim().to_string())
 }
 
+#[cfg(test)]
 fn trim_trailing_newline(input: &str) -> &str {
     input.trim_end_matches(['\n', '\r'])
 }

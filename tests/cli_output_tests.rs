@@ -181,7 +181,10 @@ fn test_cli_both_text_and_file_error() {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     // Then: clap validates conflict before application logic
-    assert!(!output.status.success(), "Command should fail on clap validation");
+    assert!(
+        !output.status.success(),
+        "Command should fail on clap validation"
+    );
     assert!(
         stderr.contains("cannot be used with") || stderr.contains("conflicts with"),
         "Error should mention clap conflict, got: {}",
@@ -213,7 +216,10 @@ fn test_cli_brute_force_both_text_and_file_error() {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     // Then: clap validates conflict before application logic
-    assert!(!output.status.success(), "Command should fail on clap validation");
+    assert!(
+        !output.status.success(),
+        "Command should fail on clap validation"
+    );
     assert!(
         stderr.contains("cannot be used with") || stderr.contains("conflicts with"),
         "Error should mention clap conflict, got: {}",
