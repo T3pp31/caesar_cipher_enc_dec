@@ -58,7 +58,15 @@ fn test_cli_encrypt_stdin_matches_text_arg_for_surrounding_spaces() {
 
     // Given: --text with surrounding spaces
     let text_arg_output = Command::new("cargo")
-        .args(["run", "--", "encrypt", "--text", "  Hello  ", "--shift", "3"])
+        .args([
+            "run",
+            "--",
+            "encrypt",
+            "--text",
+            "  Hello  ",
+            "--shift",
+            "3",
+        ])
         .output()
         .expect("Failed to execute CLI with --text");
     assert!(text_arg_output.status.success());
