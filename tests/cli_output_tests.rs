@@ -52,6 +52,63 @@ fn test_cli_encrypt_with_text_arg() {
 }
 
 #[test]
+fn test_cli_encrypt_stdin_matches_text_arg_for_surrounding_spaces() {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+
+    // Given: --text with surrounding spaces
+    let text_arg_output = Command::new("cargo")
+        .args([
+            "run",
+            "--",
+            "encrypt",
+            "--text",
+            "  Hello  ",
+            "--shift",
+            "3",
+        ])
+        .output()
+        .expect("Failed to execute CLI with --text");
+    assert!(text_arg_output.status.success());
+    let text_arg_line = String::from_utf8_lossy(&text_arg_output.stdout)
+        .lines()
+        .last()
+        .unwrap_or("")
+        .to_string();
+
+    // When: the same text is provided via stdin
+    let mut stdin_child = Command::new("cargo")
+        .args(["run", "--", "encrypt", "--shift", "3"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn CLI for stdin");
+    stdin_child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"  Hello  \n")
+        .unwrap();
+    let stdin_output = stdin_child.wait_with_output().unwrap();
+    assert!(stdin_output.status.success());
+    let stdin_stdout = String::from_utf8_lossy(&stdin_output.stdout);
+    let stdin_line = stdin_stdout
+        .strip_prefix("Enter text: ")
+        .unwrap_or(&stdin_stdout)
+        .trim_end_matches(['\n', '\r'])
+        .to_string();
+
+    // Then: ciphertext matches and surrounding spaces are preserved
+    assert_eq!(
+        text_arg_line, stdin_line,
+        "--text line: {:?}, stdin ciphertext: {:?}, full stdin stdout: {:?}",
+        text_arg_line, stdin_line, stdin_stdout
+    );
+    assert_eq!(stdin_line, "  Khoor  ");
+}
+
+#[test]
 fn test_cli_decrypt_with_text_arg() {
     // Given: CLI with decrypt command and text argument
     let output = std::process::Command::new("cargo")

@@ -178,10 +178,10 @@ fn get_input_text(
         )
         .into());
     }
-    Ok(input.trim().to_string())
+    Ok(trim_trailing_newline(&input).to_string())
 }
 
-#[cfg(test)]
+/// Strips only trailing line endings from stdin/file-style input, preserving spaces.
 fn trim_trailing_newline(input: &str) -> &str {
     input.trim_end_matches(['\n', '\r'])
 }
@@ -227,13 +227,13 @@ fn output_result(
 ///
 /// # Returns
 ///
-/// The trimmed input string
+/// Input with trailing line endings removed (leading/trailing spaces preserved).
 fn prompt_for_text(prompt: &str) -> io::Result<String> {
     print!("{}", prompt);
     io::stdout().flush()?;
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
-    Ok(input.trim().to_string())
+    Ok(trim_trailing_newline(&input).to_string())
 }
 
 /// Validates shift input string and returns parsed value with optional warning
