@@ -46,6 +46,15 @@ fn main() {
 }
 ```
 
+### Basic vs Safe APIs
+
+| API | Shift range | Empty / whitespace-only text |
+|-----|-------------|------------------------------|
+| `encrypt` / `decrypt` | Any `i16` (normalized mod 26) | Allowed |
+| `encrypt_safe` / `decrypt_safe` | -25 to 25 only | Returns `CipherError::EmptyText` |
+
+Use `*_safe` when you want validation errors instead of silent normalization.
+
 ### Safe Functions with Error Handling
 
 ```rust
@@ -127,6 +136,24 @@ caesar_cipher_enc_dec decrypt --file encrypted.txt --shift 5 --output decrypted.
 # Use safe mode with error checking
 caesar_cipher_enc_dec encrypt --text "Hello" --shift 3 --safe
 ```
+
+Without `--safe`, the CLI accepts any `i16` shift (values are normalized modulo 26) and allows empty input. With `--safe`, shift must be in -25..=25 and text must not be empty or whitespace-only.
+
+### Input limits and file requirements
+
+Maximum payload size is **10 MB** (`MAX_INPUT_SIZE` in `config`). How the cap is applied depends on the input path:
+
+| Input path | What is limited | Notes |
+|------------|-----------------|-------|
+| `--text` | String length | Exactly 10 MB is allowed (`len > MAX` is rejected). |
+| `--file` | Entire file size | Exactly 10 MB files are allowed. Must be a **regular file** (not a directory, device, or FIFO). Read uses a streaming byte cap. |
+| Stdin / interactive line | Line **content** before `\n` | Up to 10 MB of content per line; `\n` is not counted toward the cap (buffer may be up to 10 MB + 1 byte). EOF without newline also allows exactly 10 MB. |
+
+Additional notes:
+
+- Shift prompts in interactive mode are capped at **64 bytes** per line (`MAX_SHIFT_LINE_SIZE`).
+- Stdin uses chunked reads (8 KB buffer) for performance; the 10 MB cap still applies to line content.
+- If you raise `MAX_INPUT_SIZE` in the future, consider tuning the read buffer in `bounded_input.rs`.
 
 ## Supported Characters
 

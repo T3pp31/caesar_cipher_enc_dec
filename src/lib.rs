@@ -29,6 +29,18 @@
 //! - [`config`] - Centralized constants and configuration
 //! - [`caesar_cipher`] - Core encryption/decryption functionality
 //! - [`cli`] - Command-line interface implementation
+//!
+//! ## API modes (library)
+//!
+//! | API | Shift range | Empty / whitespace-only text |
+//! |-----|-------------|------------------------------|
+//! | [`caesar_cipher::encrypt`] / [`caesar_cipher::decrypt`] | Any `i16` (normalized mod 26) | Allowed |
+//! | [`caesar_cipher::encrypt_safe`] / [`caesar_cipher::decrypt_safe`] | -25 to 25 only | `CipherError::EmptyText` |
+//!
+//! Use the `*_safe` functions when you want validation errors instead of silent normalization.
+
+/// Bounded stdin/file reading used by the CLI
+mod bounded_input;
 
 /// Centralized configuration and constants
 pub mod config;

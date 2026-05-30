@@ -2,8 +2,12 @@ use clap::{Args, Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
 
+use crate::bounded_input::{read_file_bounded, read_line_bounded};
 use crate::caesar_cipher::{decrypt, decrypt_safe, encrypt, encrypt_safe};
-use crate::config::{DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT, MAX_INPUT_SIZE, MAX_SHIFT, MIN_SHIFT};
+use crate::config::{
+    DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT, MAX_INPUT_SIZE, MAX_SHIFT, MAX_SHIFT_LINE_SIZE,
+    MIN_SHIFT,
+};
 
 /// Main CLI structure for the Caesar cipher application
 ///
@@ -154,30 +158,15 @@ fn get_input_text(
     }
 
     if let Some(f) = file {
-        let metadata =
-            fs::metadata(&f).map_err(|e| format!("Failed to read file '{}': {}", f, e))?;
-        if metadata.len() > MAX_INPUT_SIZE as u64 {
-            return Err(format!(
-                "Input file '{}' exceeds maximum size of {} bytes",
-                f, MAX_INPUT_SIZE
-            )
-            .into());
-        }
-        return fs::read_to_string(&f)
-            .map_err(|e| format!("Failed to read file '{}': {}", f, e).into());
+        let input = read_file_bounded(&f, MAX_INPUT_SIZE)
+            .map_err(|e| e.to_string())?;
+        return Ok(trim_trailing_newline(&input).to_string());
     }
 
     print!("Enter text: ");
     io::stdout().flush()?;
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
-    if input.len() > MAX_INPUT_SIZE {
-        return Err(format!(
-            "Input text exceeds maximum size of {} bytes",
-            MAX_INPUT_SIZE
-        )
-        .into());
-    }
+    let mut stdin = io::stdin().lock();
+    let input = read_line_bounded(&mut stdin, MAX_INPUT_SIZE).map_err(|e| e.to_string())?;
     Ok(trim_trailing_newline(&input).to_string())
 }
 
@@ -231,8 +220,8 @@ fn output_result(
 fn prompt_for_text(prompt: &str) -> io::Result<String> {
     print!("{}", prompt);
     io::stdout().flush()?;
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
+    let mut stdin = io::stdin().lock();
+    let input = read_line_bounded(&mut stdin, MAX_INPUT_SIZE)?;
     Ok(trim_trailing_newline(&input).to_string())
 }
 
@@ -279,8 +268,8 @@ pub(crate) fn validate_shift_input(input: &str) -> (i16, Option<String>) {
 fn prompt_for_shift() -> io::Result<i16> {
     print!("Enter shift value (default: {}): ", DEFAULT_SHIFT);
     io::stdout().flush()?;
-    let mut shift_str = String::new();
-    io::stdin().read_line(&mut shift_str)?;
+    let mut stdin = io::stdin().lock();
+    let shift_str = read_line_bounded(&mut stdin, MAX_SHIFT_LINE_SIZE)?;
 
     let (shift, warning) = validate_shift_input(&shift_str);
     if let Some(msg) = warning {
@@ -416,6 +405,22 @@ mod tests {
     // -------------------------------------------------------------------------
     // Input size limit tests
     // -------------------------------------------------------------------------
+
+    #[test]
+    fn test_read_file_bounded_rejects_directory() {
+        // Given: A directory path
+        let dir = tempfile::tempdir().unwrap();
+
+        // When: Reading as a bounded file
+        let result = crate::bounded_input::read_file_bounded(dir.path(), MAX_INPUT_SIZE);
+
+        // Then: Rejects non-regular file
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("not a regular file"));
+    }
 
     #[test]
     fn test_get_input_text_oversized_file_error() {

@@ -3,6 +3,13 @@
 //! Provides easy-to-use Caesar cipher encryption and decryption.
 //! Set text and shift number to encrypt or decrypt.
 //!
+//! ## Basic vs safe APIs
+//!
+//! | Function | Shift | Empty / whitespace-only text |
+//! |----------|-------|--------------------------------|
+//! | [`encrypt`] / [`decrypt`] | Any `i16` (normalized mod 26) | Allowed |
+//! | [`encrypt_safe`] / [`decrypt_safe`] | -25 to 25 only | Returns [`CipherError::EmptyText`] |
+//!
 //! # Usage
 //!
 //! ```
@@ -185,10 +192,7 @@ pub fn encrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
 /// ```
 pub fn decrypt_safe(text: &str, shift: i16) -> Result<String, CipherError> {
     validate_safe_inputs(text, shift)?;
-
-    let negated = -(shift as i32);
-    let normalized = negated.rem_euclid(ALPHABET_SIZE as i32) as i16;
-    Ok(shift_text(text, normalized))
+    Ok(decrypt(text, shift))
 }
 
 /// Validates shared inputs for safe Caesar cipher APIs.
