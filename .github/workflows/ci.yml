@@ -31,10 +31,15 @@ jobs:
         run: cargo test --verbose
 
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Check formatting
         run: cargo fmt --check
+
+      - name: Audit dependencies
+        uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         run: cargo build --release

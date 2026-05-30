@@ -89,30 +89,8 @@ fn test_alphabet_size_equals_max_shift_plus_one() {
     assert_eq!(ALPHABET_SIZE, MAX_SHIFT + 1);
 }
 
-#[test]
-fn test_uppercase_base_less_than_lowercase_base() {
-    // Given: UPPERCASE_BASE and LOWERCASE_BASE
-    // When: Comparing them
-    // Then: Uppercase base should be less than lowercase base
-    assert!(UPPERCASE_BASE < LOWERCASE_BASE);
-}
-
-#[test]
-fn test_max_shift_less_than_alphabet_size() {
-    // Given: MAX_SHIFT and ALPHABET_SIZE
-    // When: Comparing them
-    // Then: MAX_SHIFT should be strictly less than ALPHABET_SIZE
-    assert!(MAX_SHIFT < ALPHABET_SIZE);
-}
-
-#[test]
-fn test_default_shift_in_valid_range() {
-    // Given: DEFAULT_SHIFT and MAX_SHIFT
-    // When: Checking range
-    // Then: DEFAULT_SHIFT should be between 1 and MAX_SHIFT inclusive
-    assert!(DEFAULT_SHIFT >= 1);
-    assert!(DEFAULT_SHIFT <= MAX_SHIFT);
-}
+// Relationships among UPPERCASE_BASE, MAX_SHIFT, DEFAULT_SHIFT, etc. are
+// checked at compile time in `src/config.rs` (`const _` block).
 
 #[test]
 fn test_max_brute_force_shift_equals_max_shift() {
@@ -122,39 +100,11 @@ fn test_max_brute_force_shift_equals_max_shift() {
     assert_eq!(MAX_BRUTE_FORCE_SHIFT, MAX_SHIFT);
 }
 
-// =============================================================================
-// Abnormal prevention (異常系防止) - 全定数が正の値であること
-// =============================================================================
-
 #[test]
-fn test_all_constants_are_positive() {
-    // Given: All configuration constants
-    // When: Checking their signs
-    // Then: All should be positive
-    assert!(ALPHABET_SIZE > 0, "ALPHABET_SIZE must be positive");
-    assert!(MAX_SHIFT > 0, "MAX_SHIFT must be positive");
-    assert!(UPPERCASE_BASE > 0, "UPPERCASE_BASE must be positive");
-    assert!(LOWERCASE_BASE > 0, "LOWERCASE_BASE must be positive");
-    assert!(
-        MAX_BRUTE_FORCE_SHIFT > 0,
-        "MAX_BRUTE_FORCE_SHIFT must be positive"
-    );
-    assert!(DEFAULT_SHIFT > 0, "DEFAULT_SHIFT must be positive");
-}
-
-#[test]
-fn test_base_values_are_valid_ascii() {
-    // Given: UPPERCASE_BASE and LOWERCASE_BASE
-    // When: Checking if they are valid ASCII letter ranges
-    // Then: They should be within valid u8 range and represent letters
-    assert!(
-        UPPERCASE_BASE >= 0 && UPPERCASE_BASE <= 127,
-        "UPPERCASE_BASE must be valid ASCII"
-    );
-    assert!(
-        LOWERCASE_BASE >= 0 && LOWERCASE_BASE <= 127,
-        "LOWERCASE_BASE must be valid ASCII"
-    );
+fn test_base_values_are_valid_ascii_letters() {
+    // Given: UPPERCASE_BASE and LOWERCASE_BASE (sign/range checked at compile time in config.rs)
+    // When: Converting to characters
+    // Then: They represent 'A' and 'a'
     assert_eq!((UPPERCASE_BASE as u8) as char, 'A');
     assert_eq!((LOWERCASE_BASE as u8) as char, 'a');
 }
