@@ -5,8 +5,7 @@ use std::io::{self, Write};
 use crate::bounded_input::{read_file_bounded, read_line_bounded};
 use crate::caesar_cipher::{decrypt, decrypt_safe, encrypt, encrypt_safe};
 use crate::config::{
-    DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT, MAX_INPUT_SIZE, MAX_SHIFT, MAX_SHIFT_LINE_SIZE,
-    MIN_SHIFT,
+    DEFAULT_SHIFT, MAX_BRUTE_FORCE_SHIFT, MAX_INPUT_SIZE, MAX_SHIFT, MAX_SHIFT_LINE_SIZE, MIN_SHIFT,
 };
 
 /// Main CLI structure for the Caesar cipher application
@@ -158,8 +157,7 @@ fn get_input_text(
     }
 
     if let Some(f) = file {
-        let input = read_file_bounded(&f, MAX_INPUT_SIZE)
-            .map_err(|e| e.to_string())?;
+        let input = read_file_bounded(&f, MAX_INPUT_SIZE).map_err(|e| e.to_string())?;
         return Ok(trim_trailing_newline(&input).to_string());
     }
 
