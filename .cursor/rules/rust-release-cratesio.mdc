@@ -1,0 +1,77 @@
+---
+description: Crates.io 公開・バージョン整合・Release ワークフロー手順
+alwaysApply: false
+globs: **/Cargo.toml,**/Cargo.lock,README.md,.github/workflows/release.yml
+---
+
+# Crates.io リリースルール
+
+本クレート（`caesar_cipher_enc_dec`）の版上げ・タグ付け・Crates.io 公開時に適用する。
+
+## Git タグと Crates.io は別物
+
+| 操作 | 効果 |
+|------|------|
+| `git tag` / `git push origin vX.Y.Z` | GitHub Releases（バイナリ配布） |
+| `cargo publish` | Crates.io / docs.rs |
+
+本リポジトリでは `v*` タグ push で [`.github/workflows/release.yml`](.github/workflows/release.yml) が走り、`publish` ジョブが `cargo publish` する。**タグだけでは Crates.io に新版は出ない**（`Cargo.toml` の版と CI が正しいことが前提）。
+
+```mermaid
+flowchart LR
+  bump[Cargo.toml version bump]
+  pr[PR merge to main]
+  tag["git tag vX.Y.Z"]
+  wf[Release workflow]
+  ghRel[GitHub Release binaries]
+  crates[crates.io cargo publish]
+
+  bump --> pr --> tag --> wf
+  wf --> ghRel
+  wf --> crates
+```
+
+## 版番号の正（source of truth）
+
+- Crates.io に載る版は **`Cargo.toml` の `[package].version` のみ**。
+- Git タグは **`v` + セマンティック版** と一致させる（例: `1.0.9` ↔ `v1.0.9`）。
+- **タグだけ上げて `Cargo.toml` を据え置きにしない**（既存版の再公開スキップや `already exists` エラーの原因になる）。
+
+## リリース時に同時更新するファイル
+
+1. `Cargo.toml` — `version`
+2. `Cargo.lock` — 自クレート行（`cargo test` 等で同期）
+3. `README.md` — `[dependencies]` 例のピン留め（README 内 Note に従う）
+
+## 推奨手順
+
+1. PR で上記 3 ファイルを更新してマージ
+2. `git tag vX.Y.Z` → `git push origin vX.Y.Z`
+3. Actions の **Release** ワークフロー成功を確認
+4. https://crates.io/crates/caesar_cipher_enc_dec で新版を確認
+
+## CI / Secrets
+
+- `publish` ジョブは GitHub **Secrets** の `CARGO_REGISTRY_TOKEN` が必須。
+- トークン無効の典型: `401` / `invalid API token`（**403 は API ポリシーで別原因のことが多い**）。
+- 認証は通って `crate ... already exists` になる場合は **版未更新** を疑う（鍵切れではない例あり）。
+
+## 既知の落とし穴: crates.io API と curl
+
+`publish_guard` で crates.io API を叩く `curl` に **User-Agent がないと 403** になり、`cargo publish` まで到達しない。
+
+```bash
+curl -fsS -o /dev/null -w "%{http_code}" \
+  -H "User-Agent: caesar_cipher_enc_dec-release (github-actions)" \
+  "https://crates.io/api/v1/crates/${CRATE_NAME}/${CRATE_VERSION}"
+```
+
+- `200` → 既公開のためスキップ
+- `404` → `cargo publish` 実行
+- `403` → User-Agent 等の API アクセス方針を確認
+
+## エージェント向け禁止事項
+
+- タグ名だけを Crates.io の版として扱わない
+- `Cargo.toml` を上げずに「タグを付ければ Crates.io に出る」と案内しない
+- crates.io に既にある版の再公開を試みない

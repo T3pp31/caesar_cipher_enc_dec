@@ -2,5 +2,8 @@ target
 .DS_Store
 
 # Cursor / エージェント（ローカルのみ）
-.cursor/
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/*.mdc
 AGENTS.md
