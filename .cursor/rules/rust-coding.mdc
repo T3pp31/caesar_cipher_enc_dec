@@ -1,0 +1,138 @@
+---
+description: Rustコーディングルール（型・Result・所有権・clippy）
+alwaysApply: false
+globs: **/*.rs,**/Cargo.toml
+---
+
+# Rust コーディングルール
+
+既存の Cargo ワークスペース・クレート構成に従うこと。本ルールは新規実装・リファクタ時の共通方針とする。
+
+## プロジェクト構造
+
+- `Cargo.toml` / `Cargo.lock` の既存パターン（workspace、features、dependencies）を崩さない。
+- バイナリとライブラリを分ける場合は、再利用ロジックは `lib` に置き、`main.rs` は薄く保つ。
+- 1モジュールが肥大化したら、責務単位で `mod` 分割し、`mod.rs` または `foo.rs` + `foo/` ディレクトリに整理する。
+
+### 責務の分離
+
+| 層 | 責務 |
+|---|---|
+| `domain` / `model` | 型・不変条件・純粋な変換 |
+| `service` / `use_case` | ビジネスロジックの組み立て |
+| `infra` / `adapter` | DB・HTTP・ファイル I/O など外部境界 |
+| `api` / `cli` | 入出力の変換・ルーティング |
+
+下位層（domain）が上位層（api）に依存しないこと。循環依存は禁止。
+
+---
+
+## エラー処理
+
+- ライブラリクレートでは `Result<T, E>` を返し、**本番コードで `unwrap()` / `expect()` を使わない**（プロトタイプ・テスト・`main` の起動失敗メッセージ等、既存慣習がある場合は除く）。
+- エラー型は `thiserror` またはプロジェクト既存の方式に合わせる。アプリケーション境界では `anyhow` 可（既採用時のみ）。
+- `panic!` は回復不能なバグ用に限定し、入力検証失敗は `Result` で表現する。
+- `?` を優先し、不要な `match` のネストを避ける。
+
+---
+
+## 型指定（必須）
+
+**新規・変更する Rust コードは、型で意図を表現する。** コンパイラ推論に任せきりにせず、公開 API とドメイン境界は明示的な型にする。
+
+### 付与・明示の範囲
+
+| 対象 | 要件 |
+|------|------|
+| `pub fn` / `pub struct` / `pub enum` | シグネチャ・フィールド型を明示。`///` ドキュメントを付ける |
+| 関数の引数・戻り値 | 推論任せにせず、公開・再export される API は型を読み取れるように書く |
+| エラー | 成功は `T`、失敗は `E`。`Result<T, E>` を返し、意味のあるエラー型を定義する |
+| オプション | 「無いかもしれない」は `Option<T>`。「失敗しうる」は `Result<T, E>`。混同しない |
+| 定数 | マジックナンバーは `const` / `enum` / `newtype` で名付ける |
+| 内部コード | 推論で十分なら省略可。ただし複雑な式・ジェネリクス・`collect()` 前後は型を明示 |
+
+### 設計の書き方
+
+- **不正な状態を型で表現**する。フラグの組み合わせより `enum`、ID の混同防止に `struct UserId(u64)` 等の newtype。
+- **所有権を型で表現**する。借用で足りる引数は `&str` / `&[T]`。所有権が必要なときだけ `String` / `Vec<T>`。
+- 列挙で分岐が閉じるようにし、`match` は網羅的に（`#[must_use]` を適宜付与）。
+- コレクション変換は型をはっきりさせる。例: `let items: Vec<User> = iter.collect()`（空の `collect()` 任せを避ける）。
+- トレイト境界は必要最小限。公開 API が複雑になる場合は `impl Trait` や具体的な型を優先し、過剰な `<T: Foo + Bar + Baz>` を避ける。
+- 動的ディスパッチが必要なときだけ `dyn Trait`。可能なら `enum` またはジェネリクスで静的に解決する。
+- 非同期は `async fn foo() -> Result<Bar, Error>` のように戻り値を明示。`Future` を無名で返すだけにしない。
+
+### 禁止・抑制
+
+- 本番のライブラリコードで `unwrap()` / `expect()` に頼って型・エラーをごまかさない（テスト・`main` の起動処理は除く）。
+- `panic!` で入力検証を済ませない。検証失敗は `Result` / `Option`。
+- `todo!()` / `unimplemented!()` を本番パスに残さない。
+- `as` キャストは理由がない限り使わない。`TryFrom` / `From` を検討する。
+- `clone()` で所有権問題を回避する前に、借用・ライフタイム・データ構造の見直しをする。
+
+### 検証
+
+- 変更後は `cargo check` を必ず実行する。
+- プロジェクトで `cargo clippy` / `cargo clippy -- -D warnings` がある場合は警告を解消する。
+- `cargo test` で型・API 変更に伴うテスト破壊がないことを確認する。
+
+### 例
+
+```rust
+// ❌ エラーを unwrap で握りつぶす
+pub fn load_config(path: &str) -> Settings {
+    let data = std::fs::read_to_string(path).unwrap();
+    toml::from_str(&data).unwrap()
+}
+
+// ✅ 型で失敗を表現
+pub fn load_config(path: &str) -> Result<Settings, ConfigError> {
+    let data = std::fs::read_to_string(path)?;
+    let settings: Settings = toml::from_str(&data)?;
+    Ok(settings)
+}
+
+// ❌ プリミティブの積み上げ
+fn set_status(user_id: u64, status: u8) { ... }
+
+// ✅ 意味のある型
+struct UserId(u64);
+enum UserStatus { Active, Suspended }
+
+fn set_status(user_id: UserId, status: UserStatus) { ... }
+```
+
+### 公開 API ドキュメント
+
+- `pub` 項目には `///` を付け、**エラー条件**（`Result::Err` の意味）、**パニック条件**（パニックする場合のみ）、**不変条件**を書く。
+- 型パラメータ・ライフタイムが非自明なら、使用例を1行でもよいので doc コメントに含める。
+
+---
+
+## 実装スタイル
+
+- `rustfmt` のフォーマットに従う。変更後は `cargo fmt` を実行する。
+- `clippy` の警告を無視せず、既存の `#[allow(...)]` ポリシーに合わせる。
+- `unsafe` は既存コードに必要な場合のみ。新規では避け、使う場合は安全性の根拠をコメントする。
+- 非同期（`async`）はプロジェクトで既に採用されているランタイム（tokio 等）に合わせる。ブロッキング I/O を async 内に混ぜない。
+- ログは `tracing` / `log` 等、プロジェクト既存のクレートを使う。`println!` デバッグ残しは避ける。
+
+---
+
+## 依存関係・設定
+
+- 新規 crate 追加は理由を明示し、既存クレートで代替できないか確認する。
+- 機能フラグ（`[features]`）でオプション機能を切り離す（既存パターンがある場合）。
+- 環境依存の値（URL、しきい値、パス）はソースに直書きせず、設定ファイルまたは環境変数で読み込む。
+
+---
+
+## テストとの関係
+
+- テストの書き方は `rules/testing/` および `rust-testing` ルールに従う。
+- テスト内の `unwrap()` は可。本番コードの設計をテスト都合で劣化させない。
+
+## 変更時の確認
+
+- `cargo check` / `cargo build` / `cargo test` を実行し、失敗がないことを確認する。
+- 公開 API（型・トレイト・エラー型）を変えた場合は、呼び出し元・テストをあわせて更新する。
+- 既存の期待動作を壊さないこと。挙動変更は意図をコメントまたは changelog に残す。

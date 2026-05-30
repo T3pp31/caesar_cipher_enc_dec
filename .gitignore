@@ -1,9 +1,6 @@
 target
 .DS_Store
 
-# Cursor / エージェント（ローカルのみ）
-.cursor/*
-!.cursor/rules/
-.cursor/rules/*
-!.cursor/rules/*.mdc
-AGENTS.md
+# Cursor: ルール・エージェント設定はリポジトリで共有（.cursor/rules/, AGENTS.md）
+# ローカル専用のプラン・キャッシュのみ除外
+.cursor/plans/
