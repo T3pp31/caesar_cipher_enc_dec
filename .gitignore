@@ -1,2 +1,6 @@
 target
 .DS_Store
+
+# Cursor / エージェント（ローカルのみ）
+.cursor/
+AGENTS.md
