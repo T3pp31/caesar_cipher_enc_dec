@@ -23,7 +23,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-caesar_cipher_enc_dec = "1.0.9"
+caesar_cipher_enc_dec = "1.0.10"
 ```
 
 > Note: This version is pinned for documentation consistency with this repository (`Cargo.toml`). For the latest release, always check [crates.io](https://crates.io/crates/caesar_cipher_enc_dec).
