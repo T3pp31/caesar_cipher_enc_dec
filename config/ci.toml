@@ -1,0 +1,13 @@
+# CI / Release 向けの設定（ワークフロー・スクリプトから参照）
+
+[release]
+# Git タグは tag_prefix + Cargo.toml の version（例: v1.0.10）
+tag_prefix = "v"
+
+[crates_io]
+# crates.io API 呼び出し時の User-Agent（未設定だと 403 になることがある）
+user_agent = "caesar_cipher_enc_dec-release (github-actions)"
+
+[paths]
+cargo_toml = "Cargo.toml"
+ci_config = "config/ci.toml"
