@@ -1,5 +1,6 @@
 # Caesar Cipher Encryption/Decryption
 
+[![CI](https://github.com/T3pp31/caesar_cipher_enc_dec/actions/workflows/ci.yml/badge.svg)](https://github.com/T3pp31/caesar_cipher_enc_dec/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/caesar_cipher_enc_dec.svg)](https://crates.io/crates/caesar_cipher_enc_dec)
 [![Documentation](https://docs.rs/caesar_cipher_enc_dec/badge.svg)](https://docs.rs/caesar_cipher_enc_dec)
 
